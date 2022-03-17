@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{99AD07E5-32DA-45A3-B52D-F96505294411}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opdex.Auth.Api", "src\Opdex.Auth.Api\Opdex.Auth.Api.csproj", "{85F7FAFF-5E5C-47CD-901F-B0AF06F617A0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{FB55B41E-F945-4B70-9C86-B5D427B726E9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opdex.Auth.Api.Tests", "test\Opdex.Auth.Api.Tests\Opdex.Auth.Api.Tests.csproj", "{97FB354D-F799-41F8-8467-344772C6F2A8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{85F7FAFF-5E5C-47CD-901F-B0AF06F617A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85F7FAFF-5E5C-47CD-901F-B0AF06F617A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85F7FAFF-5E5C-47CD-901F-B0AF06F617A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85F7FAFF-5E5C-47CD-901F-B0AF06F617A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97FB354D-F799-41F8-8467-344772C6F2A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97FB354D-F799-41F8-8467-344772C6F2A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97FB354D-F799-41F8-8467-344772C6F2A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97FB354D-F799-41F8-8467-344772C6F2A8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{85F7FAFF-5E5C-47CD-901F-B0AF06F617A0} = {99AD07E5-32DA-45A3-B52D-F96505294411}
+		{97FB354D-F799-41F8-8467-344772C6F2A8} = {FB55B41E-F945-4B70-9C86-B5D427B726E9}
+	EndGlobalSection
+EndGlobal
