@@ -1,6 +1,4 @@
 using System.Net.Http.Json;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Ardalis.GuardClauses;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -44,7 +42,6 @@ public class WalletModule : IWalletModule
         using (_logger.BeginScope(logDetails))
         {
             var response = await _httpClient.PostAsJsonAsync("/api/Wallet/verifymessage", request, cancellationToken);
-            var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
             return await response.Content.ReadFromJsonAsync<bool>(CirrusSerialization.DefaultOptions, cancellationToken);
         }
     }
