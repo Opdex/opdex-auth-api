@@ -47,7 +47,7 @@ public class AuthController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _stratisIdValidator.RetrieveConnectionId(Request.BaseUrlWithPath(), query, body, cancellationToken);
-        if (result.IsFailed) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Bad Request", result.Errors[0].Message);
+        if (result.IsFailed) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, result.Errors[0].Message);
 
         var bearerToken = await _jwtIssuer.Create(body.PublicKey, cancellationToken);
         return Ok(bearerToken);
@@ -60,7 +60,7 @@ public class AuthController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _stratisIdValidator.RetrieveConnectionId(Request.BaseUrlWithPath(), query, body, cancellationToken);
-        if (result.IsFailed) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Bad Request", result.Errors[0].Message);
+        if (result.IsFailed) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, result.Errors[0].Message);
         
         var bearerToken = await _jwtIssuer.Create(body.PublicKey, cancellationToken);
         await _mediator.Send(new PersistAuthSuccessCommand(new AuthSuccess(result.Value, body.PublicKey)), cancellationToken);

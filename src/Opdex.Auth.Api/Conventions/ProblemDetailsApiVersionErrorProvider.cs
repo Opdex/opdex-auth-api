@@ -10,6 +10,6 @@ public class ProblemDetailsApiVersionErrorProvider : IErrorResponseProvider
     public IActionResult CreateResponse(ErrorResponseContext context)
     {
         Guard.Against.Null(context);
-        return ProblemDetailsBuilder.BuildResponse(context.Request.HttpContext, StatusCodes.Status400BadRequest, "Bad Request", "Unsupported API version");
+        return ProblemDetailsBuilder.BuildResponse(context.Request.HttpContext, StatusCodes.Status400BadRequest, "Unsupported API version");
     }
 }

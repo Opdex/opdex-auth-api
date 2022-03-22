@@ -37,8 +37,7 @@ components:
             title: Too Many Requests
             detail: "Quota exceeded. Maximum allowed: 500 per 60s. Please try again in 30 second(s)."
             status: 429
-            extensions:
-              traceId: 00-00000000000000000000000000000000-0000000000000000-00
+            traceId: 00-00000000000000000000000000000000-0000000000000000-00
     InternalServerError:
       description: Unexpected error occurred
       content:
@@ -49,8 +48,7 @@ components:
             type: https://httpstatuses.com/500
             title: Internal Server Error
             status: 500
-            extensions:
-              traceId: 00-00000000000000000000000000000000-0000000000000000-00
+            traceId: 00-00000000000000000000000000000000-0000000000000000-00
   schemas:
     problemDetails:
       type: object
@@ -71,11 +69,9 @@ components:
         instance:
           type: string
           description: A URI reference that identifies the specific occurrence of the problem
-        extensions:
-          type: object
-          additionalProperties:
-            nullable: true
-          description: Non-standard problem details extensions that may be ignored
+      additionalProperties: 
+        nullable: true
+        description: Non-standard problem details extensions that may be ignored
       description: Carries machine-readable details of errors in a HTTP response
     validationProblemDetails:
       allOf:
