@@ -1,0 +1,34 @@
+parameters:
+  - name: environment
+    type: string
+
+jobs:
+  - deployment: ${{ parameters.environment }}
+    displayName: 'Deploy Resources'
+    variables:
+      - group: '${{ parameters.environment }}-auth-api' # points to variable group in Azure DevOps
+    environment: ${{ parameters.environment }} # points to environments in Azure DevOps
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - task: ArchiveFiles@2
+              displayName: 'Archive Files'
+              inputs:
+                rootFolderOrFile: '$(Pipeline.Workspace)/$(ARTIFACT_NAME)/Opdex.Auth.Api'
+                includeRootFolder: false
+                archiveType: zip
+                archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+                replaceExistingArchive: true
+
+            - task: AzureWebApp@1
+              inputs:
+                azureSubscription: $(azureSubscription)
+                appType: 'webApp'
+                appName: 'app-opdex-${{ parameters.environment }}-auth-api'
+                package: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+                deploymentMethod: 'auto'
+                deployToSlotOrASE: true
+                slotName: 'staging'
+                appSettings: '-CommitHash $(Build.SourceVersion) -Azure:KeyVault:Name $(keyVaultName)'
+              displayName: Deploy to App Service

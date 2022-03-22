@@ -1,0 +1,116 @@
+name: Opdex-Auth-API
+trigger:
+  - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  location: "Central US"
+  azureSubscription: "sub-opdex-dev"
+  ARTIFACT_NAME: auth-api
+  releaseTemplate: "azure-pipelines.release.yml"
+
+stages:
+  - stage: CI
+    displayName: "Continuous Integration"
+
+    jobs:
+      - job: Build
+        displayName: Build and Publish
+
+        variables:
+          SOLUTION: "Opdex.Auth.Api.sln"
+          BUILD_CONFIGURATION: "Release"
+          IMAGE_REPOSITORY: "opdex-auth-api"
+          DOCKERFILE_PATH: "src/Opdex.Auth.Api/Dockerfile"
+          TAG: "$(Build.SourceVersion)"
+
+        steps:
+          - task: UseDotNet@2 # https://github.com/dotnet/core/issues/6907
+            inputs:
+              packageType: "sdk"
+              version: "6.0.x"
+            displayName: Use .NET 6.0
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: "restore"
+              projects: $(SOLUTION)
+            displayName: Restore
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: "build"
+              projects: $(SOLUTION)
+              arguments: "--configuration $(BUILD_CONFIGURATION) --no-restore"
+            displayName: "Build"
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: "test"
+              projects: test/**/*.Tests.csproj
+              arguments: "--configuration $(BUILD_CONFIGURATION) --no-build"
+            displayName: "Unit Test"
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: "publish"
+              projects: $(SOLUTION)
+              publishWebProjects: True
+              arguments: "--configuration $(BUILD_CONFIGURATION) --no-build --output $(Build.ArtifactStagingDirectory)"
+              zipAfterPublish: False
+            displayName: Publish
+
+          - task: Docker@2
+            inputs:
+              containerRegistry: "acr-opdex"
+              repository: "$(IMAGE_REPOSITORY)"
+              command: "buildAndPush"
+              Dockerfile: "$(DOCKERFILE_PATH)"
+              buildContext: "$(Build.ArtifactStagingDirectory)/Opdex.Auth.Api"
+              tags: "$(TAG)"
+            displayName: Docker
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathtoPublish: "$(Build.ArtifactStagingDirectory)"
+              artifactName: "$(ARTIFACT_NAME)"
+            displayName: Share
+
+  - stage: DEV
+    displayName: "Release to devnet (Azure)"
+    dependsOn: CI
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main')) # Don't run deployment for PRs against the branch.
+    jobs:
+      - template: ${{ variables.releaseTemplate }}
+        parameters:
+          environment: "dev"
+
+  - stage: TEST
+    displayName: "Release to testnet (Azure)"
+    dependsOn: DEV
+    jobs:
+      - template: ${{ variables.releaseTemplate }}
+        parameters:
+          environment: "test"
+      - job:
+        displayName: "ReadMe Docs"
+        steps:
+          - task: CmdLine@2
+            displayName: Sync OpenAPI doc
+            inputs:
+              script: |
+                npm install rdme
+                npx rdme openapi $(Build.SourcesDirectory)/docs/openapi.yml --id=6239ef7bd1068300a859a8af --key=$(README_API_KEY)
+            env:
+              README_API_KEY: $(README_API_KEY)
+        dependsOn: "test" # template deployment name == parameters.environment
+
+  - stage: MAIN
+    displayName: "Release to mainnet (Azure)"
+    dependsOn: TEST
+    jobs:
+      - template: ${{ variables.releaseTemplate }}
+        parameters:
+          environment: "main"
