@@ -41,6 +41,7 @@ if (builder.Environment.IsProduction())
 
 builder.Services.Configure<StatusOptions>(builder.Configuration);
 builder.Services.Configure<EncryptionOptions>(builder.Configuration.GetSection(EncryptionOptions.Name));
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.Name));
 
 builder.Services.AddMediatR(typeof(IDomainAssemblyMarker), typeof(IApiAssemblyMarker), typeof(IInfrastructureAssemblyMarker));
 builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.Name));
