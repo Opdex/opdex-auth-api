@@ -111,8 +111,8 @@ builder.Services.AddProblemDetails(options =>
         return false;
     };
 });
-builder.Services.AddProblemDetailsConventions();
 
+builder.Services.AddProblemDetailsConventions();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -131,7 +131,7 @@ else
 }
 
 app.UseCors(options => options
-                .SetIsOriginAllowed(host => true)
+                .AllowAnyOrigin()
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials());
