@@ -131,7 +131,7 @@ else
 }
 
 app.UseCors(options => options
-                .AllowAnyOrigin()
+                .SetIsOriginAllowed(host => true)
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials());
