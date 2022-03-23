@@ -8,7 +8,7 @@ public class EncryptionOptions
     /// <summary>
     /// Configuration options section name
     /// </summary>
-    public const string Name = "Encryption";
+    public const string ConfigurationSectionName = "Encryption";
 
     /// <summary>
     /// Secret encryption key

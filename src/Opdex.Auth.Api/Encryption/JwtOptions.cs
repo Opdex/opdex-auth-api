@@ -2,7 +2,7 @@ namespace Opdex.Auth.Api.Encryption;
 
 public class JwtOptions
 {
-    public const string Name = "Jwt";
+    public const string ConfigurationSectionName = "Jwt";
 
-    public string SigningKey { get; set; }
+    public string SigningKeyIdentifier { get; set; }
 }

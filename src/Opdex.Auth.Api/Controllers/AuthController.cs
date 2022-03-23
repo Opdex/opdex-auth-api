@@ -5,6 +5,7 @@ using Ardalis.GuardClauses;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Opdex.Auth.Api.Conventions;
 using Opdex.Auth.Api.Encryption;
 using Opdex.Auth.Api.Helpers;
@@ -23,14 +24,16 @@ public class AuthController : ControllerBase
     private readonly IMediator _mediator;
     private readonly StratisIdValidator _stratisIdValidator;
     private readonly IJwtIssuer _jwtIssuer;
+    private readonly IOptionsSnapshot<ApiOptions> _apiOptions;
 
     public AuthController(ITwoWayEncryptionProvider twoWayEncryptionProvider, IMediator mediator,
-                          StratisIdValidator stratisIdValidator, IJwtIssuer jwtIssuer)
+                          StratisIdValidator stratisIdValidator, IJwtIssuer jwtIssuer, IOptionsSnapshot<ApiOptions> apiOptions)
     {
         _twoWayEncryptionProvider = Guard.Against.Null(twoWayEncryptionProvider, nameof(twoWayEncryptionProvider));
         _mediator = Guard.Against.Null(mediator);
         _stratisIdValidator = Guard.Against.Null(stratisIdValidator);
         _jwtIssuer = Guard.Against.Null(jwtIssuer);
+        _apiOptions = Guard.Against.Null(apiOptions);
     }
     
     [HttpGet]
@@ -38,7 +41,7 @@ public class AuthController : ControllerBase
     {
         var expiry = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds();
         var uid = Base64Extensions.UrlSafeBase64Encode(_twoWayEncryptionProvider.Encrypt($"{Guid.NewGuid()}{expiry}"));
-        return Ok(new StratisId(Request.BaseUrlWithPath(), uid, expiry).ToString());
+        return Ok(new StratisId($"{_apiOptions.Value.Authority}{Request.Path}", uid, expiry).ToString());
     }
 
     [HttpPost]
@@ -46,10 +49,10 @@ public class AuthController : ControllerBase
         [FromBody] StratisSignatureAuthCallbackBody body,
         CancellationToken cancellationToken)
     {
-        var result = await _stratisIdValidator.RetrieveConnectionId(Request.BaseUrlWithPath(), query, body, cancellationToken);
+        var result = await _stratisIdValidator.RetrieveConnectionId($"{_apiOptions.Value.Authority}{Request.Path}", query, body, cancellationToken);
         if (result.IsFailed) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, result.Errors[0].Message);
 
-        var bearerToken = await _jwtIssuer.Create(body.PublicKey, cancellationToken);
+        var bearerToken = _jwtIssuer.Create(body.PublicKey);
         return Ok(bearerToken);
     }
     
@@ -59,10 +62,10 @@ public class AuthController : ControllerBase
         [FromBody] StratisSignatureAuthCallbackBody body,
         CancellationToken cancellationToken)
     {
-        var result = await _stratisIdValidator.RetrieveConnectionId(Request.BaseUrlWithPath(), query, body, cancellationToken);
+        var result = await _stratisIdValidator.RetrieveConnectionId($"{_apiOptions.Value.Authority}{Request.Path}", query, body, cancellationToken);
         if (result.IsFailed) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, result.Errors[0].Message);
         
-        var bearerToken = await _jwtIssuer.Create(body.PublicKey, cancellationToken);
+        var bearerToken = _jwtIssuer.Create(body.PublicKey);
         await _mediator.Send(new PersistAuthSuccessCommand(new AuthSuccess(result.Value, body.PublicKey)), cancellationToken);
         await _mediator.Send(new NotifyAuthSuccessCommand(result.Value, bearerToken), cancellationToken);
         return NoContent();

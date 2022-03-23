@@ -8,6 +8,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Connections.Features;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Options;
 using Moq;
 using Opdex.Auth.Api.Encryption;
 using Opdex.Auth.Api.Helpers;
@@ -34,20 +35,16 @@ public class AuthHubTests
     {
         _twoWayEncryptionProvider = new FakeTwoWayEncryptionProvider();
         _hubCallerContextMock = new Mock<HubCallerContext>();
-        var httpContextMock = new Mock<HttpContext>();
-        var httpRequestMock = new Mock<HttpRequest>();
-        httpRequestMock.Setup(callTo => callTo.Scheme).Returns(_baseUri.Scheme);
-        httpRequestMock.Setup(callTo => callTo.Host).Returns(new HostString(_baseUri.Host));
-        httpContextMock.Setup(callTo => callTo.Request).Returns(httpRequestMock.Object);
-        _hubCallerContextMock.Setup(callTo => callTo.Features.Get<IHttpContextFeature>()!.HttpContext).Returns(httpContextMock.Object);
         _callerClientMock = new Mock<IAuthClient>();
         var hubCallerClientsMock = new Mock<IHubCallerClients<IAuthClient>>();
         hubCallerClientsMock.Setup(callTo => callTo.Caller).Returns(_callerClientMock.Object);
 
         _mediatorMock = new Mock<IMediator>();
         _jwtIssuerMock = new Mock<IJwtIssuer>();
-        
-        _hub = new AuthHub(_mediatorMock.Object, _twoWayEncryptionProvider, _jwtIssuerMock.Object)
+        var apiOptionsMock = new Mock<IOptionsSnapshot<ApiOptions>>();
+        apiOptionsMock.Setup(callTo => callTo.Value).Returns(new ApiOptions { Authority = _baseUri.ToString().TrimEnd('/') });
+
+        _hub = new AuthHub(_mediatorMock.Object, _twoWayEncryptionProvider, _jwtIssuerMock.Object, apiOptionsMock.Object)
         {
             Context = _hubCallerContextMock.Object,
             Clients = hubCallerClientsMock.Object
@@ -236,8 +233,7 @@ public class AuthHubTests
 
         _mediatorMock.Setup(callTo => callTo.Send(It.IsAny<SelectAuthSuccessByConnectionIdQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AuthSuccess(connectionId, "PAe1RRxnRVZtbS83XQ4soyjwJUDSjaJAKZ"));
-        _jwtIssuerMock.Setup(callTo => callTo.Create(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(jwt);
+        _jwtIssuerMock.Setup(callTo => callTo.Create(It.IsAny<string>())).Returns(jwt);
 
         // Act
         var succeeded = await _hub.Reconnect(previousConnectionId, stratisId);
