@@ -1,29 +1,170 @@
+using System;
+using System.Reflection;
+using AspNetCoreRateLimit;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using Hellang.Middleware.ProblemDetails;
+using Hellang.Middleware.ProblemDetails.Mvc;
+using MediatR;
+using Microsoft.ApplicationInsights.AspNetCore.Extensions;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.ApplicationInsights.Extensibility.Implementation;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Logging;
+using Opdex.Auth.Api;
+using Opdex.Auth.Api.Conventions;
+using Opdex.Auth.Api.Encryption;
+using Opdex.Auth.Api.SignalR;
+using Opdex.Auth.Domain;
+using Opdex.Auth.Domain.Cirrus;
+using Opdex.Auth.Infrastructure;
+using Opdex.Auth.Infrastructure.Cirrus;
+using Opdex.Auth.Infrastructure.Data;
+using Serilog;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Host.UseSerilog();
+
+if (builder.Environment.IsProduction())
+{
+    builder.WebHost.ConfigureAppConfiguration((context, config) =>
+    {
+        var secretClient = new SecretClient(
+            new Uri($"https://{context.Configuration["Azure:KeyVault:Name"]}.vault.azure.net/"),
+            new DefaultAzureCredential());
+
+        config.AddAzureKeyVault(secretClient, new AzureKeyVaultConfigurationOptions
+        {
+            Manager = new KeyVaultSecretManager(),
+            ReloadInterval = TimeSpan.FromSeconds(16)
+        });
+    });
+}
+
+builder.Services.AddApplicationInsightsTelemetry(new ApplicationInsightsServiceOptions
+{
+    // disable default adaptive sampling configuration, instead we customise this
+    EnableAdaptiveSampling = false
+});
+
+// gets rid of telemetry spam in the debug console, may prevent visual studio app insights monitoring
+TelemetryDebugWriter.IsTracingDisabled = true;
+
+builder.Services.Configure<StatusOptions>(builder.Configuration);
+builder.Services.Configure<EncryptionOptions>(builder.Configuration.GetSection(EncryptionOptions.Name));
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.Name));
+
+builder.Services.AddMediatR(typeof(IDomainAssemblyMarker), typeof(IApiAssemblyMarker), typeof(IInfrastructureAssemblyMarker));
+builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.Name));
+builder.Services.AddTransient<IDbContext, DbContext>();
+builder.Services.Configure<CirrusOptions>(builder.Configuration.GetSection(CirrusOptions.Name));
+builder.Services.AddHttpClient<IWalletModule, WalletModule>();
+
+builder.Services.AddScoped<ITwoWayEncryptionProvider, AesCbcProvider>();
+builder.Services.AddScoped<IJwtIssuer, JwtIssuer>();
+builder.Services.AddScoped<StratisIdValidator>();
+builder.Services.AddSignalR(o => { o.EnableDetailedErrors = true; }).AddAzureSignalR();
+builder.Services.AddApiVersioning(options =>
+{
+    options.ReportApiVersions = true;
+    options.ErrorResponses = new ProblemDetailsApiVersionErrorProvider();
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+});
+
+// Rate Limiting
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"))
+    .Configure<IpRateLimitOptions>(options =>
+    {
+        options.RequestBlockedBehaviorAsync = async (httpContext, _, rateLimitCounter, rule) =>
+        {
+            var detail = $"Quota exceeded. Maximum allowed: {rule.Limit} per {rule.Period}.";
+            var response = ProblemDetailsBuilder.PrepareResponse(httpContext, StatusCodes.Status429TooManyRequests, detail);
+            httpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            httpContext.Response.Headers["Retry-After"] = rateLimitCounter.Timestamp.RetryAfterFrom(rule);
+            await httpContext.Response.WriteAsync(JsonSerializer.Serialize(response));
+            await httpContext.Response.CompleteAsync();
+        };
+    });
+builder.Services.Configure<IpRateLimitPolicies>(builder.Configuration.GetSection("IpRateLimitPolicies"));
+builder.Services.AddInMemoryRateLimiting();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
+builder.Services.AddProblemDetails(options =>
+{
+    options.ValidationProblemStatusCode = StatusCodes.Status400BadRequest;
+    options.MapToStatusCode<Exception>(StatusCodes.Status500InternalServerError);
+    options.IncludeExceptionDetails = (_, _) => builder.Environment.IsDevelopment();
+    options.ShouldLogUnhandledException = (httpContext, exception, _) =>
+    {
+        httpContext.Items.Add("UnhandledException", exception);
+        return false;
+    };
+});
+builder.Services.AddProblemDetailsConventions();
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();
+    IdentityModelEventSource.ShowPII = true;
+}
+else
+{
+    app.UseHsts();
+    app.UseHttpsRedirection();
 }
 
-app.UseHttpsRedirection();
+var telemetryProcessorChainBuilder = app.Services.GetRequiredService<TelemetryConfiguration>().DefaultTelemetrySink.TelemetryProcessorChainBuilder;
+telemetryProcessorChainBuilder.UseAdaptiveSampling(5, "Exception");
+telemetryProcessorChainBuilder.Use(next => new IgnoreRequestPathsTelemetryProcessor(next));
+telemetryProcessorChainBuilder.Build();
 
-app.UseAuthorization();
+app.UseSerilogRequestLogging(options =>
+{
+    options.EnrichDiagnosticContext += (diagnosticContext, httpContext) =>
+    {
+        if (httpContext.Items.TryGetValue("UnhandledException", out var exception))
+        {
+            diagnosticContext.SetException((Exception)exception!);
+        }
+    };
+});
 
+// yaml mapping not supported by default, must explicitly map
+var fileExtensionContentTypeProvider = new FileExtensionContentTypeProvider();
+fileExtensionContentTypeProvider.Mappings.Add(".yml", "text/yaml");
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = fileExtensionContentTypeProvider,
+    FileProvider = new ManifestEmbeddedFileProvider(Assembly.GetExecutingAssembly()),
+    RequestPath = "/swagger/v1"
+});
+
+app.UseSwaggerUI(options =>
+{
+    options.RoutePrefix = "swagger";
+    options.InjectJavascript("v1/openapi.js");
+});
+
+app.UseIpRateLimiting();
+
+app.MapHub<AuthHub>("/v1/socket");
 app.MapControllers();
 
 app.Run();
