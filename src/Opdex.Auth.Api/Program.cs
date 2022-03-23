@@ -130,6 +130,12 @@ else
     app.UseHttpsRedirection();
 }
 
+app.UseCors(options => options
+                .SetIsOriginAllowed(host => true)
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials());
+
 var telemetryProcessorChainBuilder = app.Services.GetRequiredService<TelemetryConfiguration>().DefaultTelemetrySink.TelemetryProcessorChainBuilder;
 telemetryProcessorChainBuilder.UseAdaptiveSampling(5, "Exception");
 telemetryProcessorChainBuilder.Use(next => new IgnoreRequestPathsTelemetryProcessor(next));
