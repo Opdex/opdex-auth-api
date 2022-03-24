@@ -1,5 +1,7 @@
 using System;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using AspNetCoreRateLimit;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
@@ -115,7 +117,8 @@ builder.Services.AddProblemDetails(options =>
 });
 builder.Services.AddProblemDetailsConventions();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+                .AddJsonOptions(config => config.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

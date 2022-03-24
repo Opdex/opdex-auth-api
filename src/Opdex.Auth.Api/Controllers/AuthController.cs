@@ -6,9 +6,11 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Opdex.Auth.Api.Conventions;
 using Opdex.Auth.Api.Encryption;
 using Opdex.Auth.Api.Helpers;
+using Opdex.Auth.Api.Models;
 using Opdex.Auth.Domain;
 using Opdex.Auth.Domain.Requests;
 using SSAS.NET;
@@ -69,5 +71,12 @@ public class AuthController : ControllerBase
         await _mediator.Send(new PersistAuthSuccessCommand(new AuthSuccess(result.Value, body.PublicKey)), cancellationToken);
         await _mediator.Send(new NotifyAuthSuccessCommand(result.Value, bearerToken), cancellationToken);
         return NoContent();
+    }
+
+    [HttpGet]
+    [Route("jwks")]
+    public async Task<ActionResult<JsonWebKeySetResponseModel>> GetJwks()
+    {
+        return Ok(new JsonWebKeySetResponseModel(await _jwtIssuer.GetPublicKeys()));
     }
 }
