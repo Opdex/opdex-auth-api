@@ -6,6 +6,8 @@ using AspNetCoreRateLimit;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Hellang.Middleware.ProblemDetails;
 using Hellang.Middleware.ProblemDetails.Mvc;
 using MediatR;
@@ -116,6 +118,8 @@ builder.Services.AddProblemDetails(options =>
     };
 });
 
+builder.Services.AddFluentValidation();
+builder.Services.AddValidatorsFromAssembly(typeof(IApiAssemblyMarker).Assembly);
 builder.Services.AddControllers()
                 .AddJsonOptions(config => config.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
 builder.Services.AddProblemDetailsConventions();
