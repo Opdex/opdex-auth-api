@@ -1,5 +1,7 @@
 using System;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using AspNetCoreRateLimit;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
@@ -40,7 +42,7 @@ if (builder.Environment.IsProduction())
     builder.WebHost.ConfigureAppConfiguration((context, config) =>
     {
         var secretClient = new SecretClient(
-            new Uri($"https://{context.Configuration["Azure:KeyVault:Name"]}.vault.azure.net/"),
+            new Uri($"https://{context.Configuration[$"{AzureKeyVaultOptions.ConfigurationSectionName}:Name"]}.vault.azure.net/"),
             new DefaultAzureCredential());
 
         config.AddAzureKeyVault(secretClient, new AzureKeyVaultConfigurationOptions
@@ -61,13 +63,15 @@ builder.Services.AddApplicationInsightsTelemetry(new ApplicationInsightsServiceO
 TelemetryDebugWriter.IsTracingDisabled = true;
 
 builder.Services.Configure<StatusOptions>(builder.Configuration);
-builder.Services.Configure<EncryptionOptions>(builder.Configuration.GetSection(EncryptionOptions.Name));
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.Name));
+builder.Services.Configure<ApiOptions>(builder.Configuration);
+builder.Services.Configure<EncryptionOptions>(builder.Configuration.GetSection(EncryptionOptions.ConfigurationSectionName));
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.ConfigurationSectionName));
+builder.Services.Configure<AzureKeyVaultOptions>(builder.Configuration.GetSection(AzureKeyVaultOptions.ConfigurationSectionName));
 
 builder.Services.AddMediatR(typeof(IDomainAssemblyMarker), typeof(IApiAssemblyMarker), typeof(IInfrastructureAssemblyMarker));
-builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.Name));
+builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.ConfigurationSectionName));
 builder.Services.AddTransient<IDbContext, DbContext>();
-builder.Services.Configure<CirrusOptions>(builder.Configuration.GetSection(CirrusOptions.Name));
+builder.Services.Configure<CirrusOptions>(builder.Configuration.GetSection(CirrusOptions.ConfigurationSectionName));
 builder.Services.AddHttpClient<IWalletModule, WalletModule>();
 
 builder.Services.AddScoped<ITwoWayEncryptionProvider, AesCbcProvider>();
@@ -112,8 +116,9 @@ builder.Services.AddProblemDetails(options =>
     };
 });
 
+builder.Services.AddControllers()
+                .AddJsonOptions(config => config.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
 builder.Services.AddProblemDetailsConventions();
-builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

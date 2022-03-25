@@ -99,6 +99,35 @@ components:
         publicKey:
           type: string
           description: Address of the message signer
+    jsonWebKeySetResponse:
+      type: object
+      description: JSON Web Key Set that can be used to validate signed JWTs
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: "#/components/schemas/jsonWebKey"
+    jsonWebKey:
+      type: object
+      properties:
+        alg:
+          type: string
+          description: The cryptographic algorithm used with the key
+        kid:
+          type: string
+          description: Unique identifier for the key
+        kty:
+          type: string
+          description: The family of cryptographic algorithms used with the key
+        n:
+          type: string
+          description: The modulus for an RSA public key
+        e:
+          type: string
+          description: The exponent for an RSA public key
+        use:
+          type: string
+          description: How the key is meant to be used
     statusResponse:
       type: object
       description: Status of the API instance
@@ -199,7 +228,7 @@ paths:
       description: >
         Responds to a request from a Stratis Signature Auth signer's wallet.
         See the [specification](https://github.com/Opdex/SSAS) for further detail.
-      operationId: authenticate callback
+      operationId: authenticateCallback
       parameters:
         - name: uid
           in: query
@@ -246,6 +275,33 @@ paths:
                     - Expiration date must be a unix timestamp.
                 extensions:
                   traceId: 00-00000000000000000000000000000000-0000000000000000-00
+        429:
+          $ref: "#/components/responses/TooManyRequests"
+        500:
+          $ref: "#/components/responses/InternalServerError"
+  /auth/jwks:
+    get:
+      tags:
+        - Authentication
+      summary: Get JSON Web Key Set
+      description: >
+        Retrieves public keys that can used to verify tokens returned by the server.
+      operationId: getJsonWebKeySet
+      responses:
+        200:
+          description: JSON Web Key Set found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/jsonWebKeySetResponse"
+              example:
+                keys:
+                  - n: 1dTDvWnEHm_fOwX8xpQ8YzF0zvO1ERAARCsJz63z9cv3W94G78iyqUX7YkYUdIwe-Z25RS-M871-_zqdlDdCpxPtQPJjNa8VoGn7jvWmihBuCmwDPcF7Kw3gBwposHO7eFU3JLKdErDgrKBALp-Pm5EMGXFPeNCa7PKQAqdWrm0amDGHaNDjycCOojyYo_9RXlTAMia927iMT-Kch7eQQ3AN5k5rAODilNYMRafq9IriI-hUP5Eak7LojD_6Z_H_qIhEj2WIgf8jplywWOrklbUvf1W74jNThioQ012VEStGcNz7XqqUarCdewWi16BwKybCJc2ahMCLXKd_FGFn9Q
+                    e: AQAB
+                    alg: RS256
+                    kid: e2ba0368610e4c69974c3177ea52f9f5
+                    kty: RSA
+                    use: sig                  
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
