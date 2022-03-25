@@ -4,5 +4,9 @@ public class JwtOptions
 {
     public const string ConfigurationSectionName = "Jwt";
 
-    public string SigningKeyIdentifier { get; set; }
+    public string SigningKeyName { get; set; }
+
+    public string SigningKeyVersion { get; set; }
+
+    public string SigningKeyIdentifier => $"{SigningKeyName}/{SigningKeyVersion}";
 }

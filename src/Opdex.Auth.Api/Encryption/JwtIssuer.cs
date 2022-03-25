@@ -16,6 +16,7 @@ namespace Opdex.Auth.Api.Encryption;
 public class JwtIssuer : IJwtIssuer
 {
     private readonly string _keyId;
+    private readonly string _keyIdHeaderValue;
     private readonly IOptionsSnapshot<ApiOptions> _apiOptions;
 
     public JwtIssuer(IOptionsSnapshot<AzureKeyVaultOptions> azureKeyVaultOptions, IOptionsSnapshot<JwtOptions> jwtOptions,
@@ -23,8 +24,9 @@ public class JwtIssuer : IJwtIssuer
     {
         Guard.Against.Null(azureKeyVaultOptions);
         Guard.Against.Null(jwtOptions);
-        
+
         _keyId = $"https://{azureKeyVaultOptions.Value.Name}.vault.azure.net/keys/{jwtOptions.Value.SigningKeyIdentifier}";
+        _keyIdHeaderValue = jwtOptions.Value.SigningKeyVersion;
         _apiOptions = Guard.Against.Null(apiOptions);
     }
 
@@ -32,6 +34,7 @@ public class JwtIssuer : IJwtIssuer
     {
         Guard.Against.NullOrEmpty(walletAddress, nameof(walletAddress));
 
+        var securityKey = new AmendedKeyVaultSecurityKey(_keyId, _keyIdHeaderValue, CreateAuthCallback());
         var tokenHandler = new JwtSecurityTokenHandler();
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -40,7 +43,7 @@ public class JwtIssuer : IJwtIssuer
             // Todo: This should technically be much lower once refresh tokens are implemented, maybe back to 1 hour.
             Expires = DateTime.UtcNow.AddHours(24),
             IssuedAt = DateTime.UtcNow,
-            SigningCredentials = new SigningCredentials(new KeyVaultSecurityKey(_keyId, CreateAuthCallback()), SecurityAlgorithms.RsaSha256)
+            SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256)
             {
                 CryptoProviderFactory = new CryptoProviderFactory { CustomCryptoProvider = new KeyVaultCryptoProvider() }
             }
