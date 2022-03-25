@@ -96,9 +96,11 @@ components:
         signature:
           type: string
           description: Signed Stratis ID
+          pattern: ^[A-Za-z0-9+\/]{87}=$
         publicKey:
           type: string
           description: Address of the message signer
+          pattern: ^[a-km-zA-HJ-NP-Z1-9]+$
     jsonWebKeySetResponse:
       type: object
       description: JSON Web Key Set that can be used to validate signed JWTs
@@ -211,11 +213,10 @@ paths:
                 type: https://httpstatuses.com/400
                 title: One or more validation errors occurred.
                 status: 400
+                traceId: 00-00000000000000000000000000000000-0000000000000000-00
                 errors:
                   exp:
                     - Expiration date must be a unix timestamp.
-                extensions:
-                  traceId: 00-00000000000000000000000000000000-0000000000000000-00
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
@@ -270,11 +271,10 @@ paths:
                 type: https://httpstatuses.com/400
                 title: One or more validation errors occurred.
                 status: 400
+                traceId: 00-00000000000000000000000000000000-0000000000000000-00
                 errors:
                   exp:
                     - Expiration date must be a unix timestamp.
-                extensions:
-                  traceId: 00-00000000000000000000000000000000-0000000000000000-00
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
