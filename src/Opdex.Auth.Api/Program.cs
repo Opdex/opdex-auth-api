@@ -115,10 +115,10 @@ builder.Services.AddProblemDetails(options =>
         return false;
     };
 });
-builder.Services.AddProblemDetailsConventions();
 
 builder.Services.AddControllers()
                 .AddJsonOptions(config => config.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
+builder.Services.AddProblemDetailsConventions();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -134,6 +134,12 @@ else
     app.UseHsts();
     app.UseHttpsRedirection();
 }
+
+app.UseCors(options => options
+                .SetIsOriginAllowed(host => true)
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials());
 
 var telemetryProcessorChainBuilder = app.Services.GetRequiredService<TelemetryConfiguration>().DefaultTelemetrySink.TelemetryProcessorChainBuilder;
 telemetryProcessorChainBuilder.UseAdaptiveSampling(5, "Exception");
