@@ -1,6 +1,5 @@
 using System;
 using System.Reflection;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using AspNetCoreRateLimit;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
@@ -28,10 +27,7 @@ using Opdex.Auth.Api.Conventions;
 using Opdex.Auth.Api.Encryption;
 using Opdex.Auth.Api.SignalR;
 using Opdex.Auth.Domain;
-using Opdex.Auth.Domain.Cirrus;
 using Opdex.Auth.Infrastructure;
-using Opdex.Auth.Infrastructure.Cirrus;
-using Opdex.Auth.Infrastructure.Data;
 using Serilog;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -71,10 +67,7 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptio
 builder.Services.Configure<AzureKeyVaultOptions>(builder.Configuration.GetSection(AzureKeyVaultOptions.ConfigurationSectionName));
 
 builder.Services.AddMediatR(typeof(IDomainAssemblyMarker), typeof(IApiAssemblyMarker), typeof(IInfrastructureAssemblyMarker));
-builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.ConfigurationSectionName));
-builder.Services.AddTransient<IDbContext, DbContext>();
-builder.Services.Configure<CirrusOptions>(builder.Configuration.GetSection(CirrusOptions.ConfigurationSectionName));
-builder.Services.AddHttpClient<IWalletModule, WalletModule>();
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
 builder.Services.AddScoped<ITwoWayEncryptionProvider, AesCbcProvider>();
 builder.Services.AddScoped<IJwtIssuer, JwtIssuer>();

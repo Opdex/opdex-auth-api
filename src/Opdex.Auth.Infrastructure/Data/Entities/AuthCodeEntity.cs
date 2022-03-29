@@ -5,6 +5,10 @@ namespace Opdex.Auth.Infrastructure.Data.Entities;
 
 public class AuthCodeEntity
 {
+    public AuthCodeEntity()
+    {
+    }
+    
     internal AuthCodeEntity(AuthCode authCode)
     {
         Guard.Against.Null(authCode, nameof(authCode));
@@ -13,7 +17,7 @@ public class AuthCodeEntity
         Expiry = authCode.Expiry;
     }
     
-    public Guid AccessCode { get; }
-    public string Signer { get; }
-    public DateTime Expiry { get; }
+    public Guid AccessCode { get; set; }
+    public string Signer { get; set;  }
+    public DateTime Expiry { get; set; }
 }
