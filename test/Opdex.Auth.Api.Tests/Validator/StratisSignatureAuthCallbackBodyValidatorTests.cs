@@ -32,7 +32,7 @@ public class StratisSignatureAuthCallbackBodyValidatorTests
         var result = _validator.TestValidate(request);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(request => request.Signature);
+        result.ShouldHaveValidationErrorFor(r => r.Signature);
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class StratisSignatureAuthCallbackBodyValidatorTests
         var result = _validator.TestValidate(request);
 
         // Assert
-        result.ShouldNotHaveValidationErrorFor(request => request.Signature);
+        result.ShouldNotHaveValidationErrorFor(r => r.Signature);
     }
 
     [Theory]
@@ -70,7 +70,7 @@ public class StratisSignatureAuthCallbackBodyValidatorTests
         var result = _validator.TestValidate(request);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(request => request.PublicKey);
+        result.ShouldHaveValidationErrorFor(r => r.PublicKey);
     }
 
     [Fact]
@@ -86,6 +86,6 @@ public class StratisSignatureAuthCallbackBodyValidatorTests
         var result = _validator.TestValidate(request);
 
         // Assert
-        result.ShouldNotHaveValidationErrorFor(request => request.PublicKey);
+        result.ShouldNotHaveValidationErrorFor(r => r.PublicKey);
     }
 }

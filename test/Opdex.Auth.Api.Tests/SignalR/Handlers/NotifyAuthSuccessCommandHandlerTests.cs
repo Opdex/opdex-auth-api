@@ -27,15 +27,15 @@ public class NotifyAuthSuccessCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NotifyUser_WithBearerToken()
+    public async Task Handle_NotifyUser_WithAuthCode()
     {
         // Arrange
-        var request = new NotifyAuthSuccessCommand(Guid.NewGuid().ToString(), "SECRET_BEARER_TOKEN");
+        var request = new NotifyAuthSuccessCommand(Guid.NewGuid().ToString(), Guid.NewGuid());
 
         // Act
         await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        _hubContextMock.Verify(callTo => callTo.Clients.Client(request.ConnectionId).OnAuthenticated(request.BearerToken), Times.Once);
+        _hubContextMock.Verify(callTo => callTo.Clients.Client(request.ConnectionId).OnAuthenticated(request.AuthCode.ToString()), Times.Once);
     }
 }

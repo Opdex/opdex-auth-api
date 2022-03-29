@@ -5,12 +5,12 @@ namespace Opdex.Auth.Domain.Requests;
 
 public class NotifyAuthSuccessCommand : IRequest
 {
-    public NotifyAuthSuccessCommand(string connectionId, string bearerToken)
+    public NotifyAuthSuccessCommand(string connectionId, Guid authCode)
     {
-        ConnectionId = Guard.Against.Null(connectionId, nameof(connectionId));
-        BearerToken = Guard.Against.Null(bearerToken, nameof(bearerToken));
+        ConnectionId = Guard.Against.NullOrEmpty(connectionId, nameof(connectionId));
+        AuthCode = authCode;
     }
 
     public string ConnectionId { get; }
-    public string BearerToken { get; }
+    public Guid AuthCode { get; }
 }

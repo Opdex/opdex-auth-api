@@ -6,7 +6,6 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using Opdex.Auth.Api.Conventions;
 using Opdex.Auth.Api.Encryption;
 using Opdex.Auth.Api.Helpers;
@@ -54,8 +53,9 @@ public class AuthController : ControllerBase
         var result = await _stratisIdValidator.RetrieveConnectionId($"{_apiOptions.Value.Authority}{Request.Path}", query, body, cancellationToken);
         if (result.IsFailed) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, result.Errors[0].Message);
 
-        var bearerToken = _jwtIssuer.Create(body.PublicKey);
-        return Ok(bearerToken);
+        var authCode = new AuthCode(body.PublicKey);
+        await _mediator.Send(new PersistAuthCodeCommand(authCode), cancellationToken);
+        return Ok(authCode.Value);
     }
     
     [HttpPost]
@@ -66,17 +66,31 @@ public class AuthController : ControllerBase
     {
         var result = await _stratisIdValidator.RetrieveConnectionId($"{_apiOptions.Value.Authority}{Request.Path}", query, body, cancellationToken);
         if (result.IsFailed) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, result.Errors[0].Message);
+
+        var authCode = new AuthCode(body.PublicKey);
+        var success = await _mediator.Send(new PersistAuthCodeCommand(authCode), cancellationToken);
+        if (!success) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status500InternalServerError);
         
-        var bearerToken = _jwtIssuer.Create(body.PublicKey);
         await _mediator.Send(new PersistAuthSuccessCommand(new AuthSuccess(result.Value, body.PublicKey)), cancellationToken);
-        await _mediator.Send(new NotifyAuthSuccessCommand(result.Value, bearerToken), cancellationToken);
+        await _mediator.Send(new NotifyAuthSuccessCommand(result.Value, authCode.Value), cancellationToken);
         return NoContent();
+    }
+    
+    [HttpPost]
+    [Route("verify")]
+    public async Task<IActionResult> Verify([FromBody] AccessTokenRequestBody body, CancellationToken cancellationToken)
+    {
+        var authCode = await _mediator.Send(new SelectAuthCodeQuery(body.Code), cancellationToken);
+        if (authCode is null) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Invalid authorization code");
+        
+        var bearerToken = _jwtIssuer.Create(authCode.Signer);
+        return Ok(bearerToken);
     }
 
     [HttpGet]
     [Route("jwks")]
-    public async Task<ActionResult<JsonWebKeySetResponseModel>> GetJwks()
+    public async Task<ActionResult<JsonWebKeySetResponse>> GetJwks()
     {
-        return Ok(new JsonWebKeySetResponseModel(await _jwtIssuer.GetPublicKeys()));
+        return Ok(new JsonWebKeySetResponse(await _jwtIssuer.GetPublicKeys()));
     }
 }

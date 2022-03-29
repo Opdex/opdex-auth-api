@@ -18,6 +18,6 @@ public class NotifyAuthSuccessCommandHandler : AsyncRequestHandler<NotifyAuthSuc
     
     protected override async Task Handle(NotifyAuthSuccessCommand request, CancellationToken cancellationToken)
     {
-        await _hubContext.Clients.Client(request.ConnectionId).OnAuthenticated(request.BearerToken);
+        await _hubContext.Clients.Client(request.ConnectionId).OnAuthenticated(request.AuthCode.ToString());
     }
 }

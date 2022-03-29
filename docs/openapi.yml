@@ -87,6 +87,14 @@ components:
                   description: Validation error message
                 minItems: 1
               description: Contains invalid properties and associated error messages
+    accessTokenRequest:
+      type: object
+      required:
+        - code
+      properties: 
+        code:
+          type: string
+          description: Authorization code issued by the server
     stratisSignatureAuthRequest:
       type: object
       required:
@@ -197,12 +205,12 @@ paths:
               publicKey: tQ9RukZsB6bBsenHnGSo1q69CJzWGnxohm
       responses:
         200:
-          description: Signature was validated successfully
+          description: Signature was validated successfully and an authorization code was retrieved
           content:
             text/plain:
               schema:
                 type: string
-                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ3YWxsZXQiOiJQUFFkZVhkaldEQnpWTFVqZ1d3aTRtRlA0WTFtaHVOY1J1IiwibmJmIjoxNjQzMDgxNzM5LCJleHAiOjE2NDMxNjgxMzcsImlhdCI6MTY0MzA4MTczN30.xjiwjPxzgYbQlP6ON2-Mg3S7m-dWww41FISVXhOGEFY
+                example: "b0907a58-d583-480d-a468-a58e6fc7f472"
         400:
           description: The request is not valid
           content:
@@ -279,6 +287,49 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/InternalServerError"
+  /auth/verify:
+    post:
+      tags:
+        - Authentication
+      summary: Retrieve Access Token
+      description: >
+        Retrieves an access token that is signed by the server.
+      operationId: getAccessToken
+      requestBody:
+        description: Access token request parameters
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/accessTokenRequest"
+            example:
+              code: "b0907a58-d583-480d-a468-a58e6fc7f472"
+      responses:
+        200:
+          description: Access token retrieved
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ3YWxsZXQiOiJQUFFkZVhkaldEQnpWTFVqZ1d3aTRtRlA0WTFtaHVOY1J1IiwibmJmIjoxNjQzMDgxNzM5LCJleHAiOjE2NDMxNjgxMzcsImlhdCI6MTY0MzA4MTczN30.xjiwjPxzgYbQlP6ON2-Mg3S7m-dWww41FISVXhOGEFY
+        400:
+          description: The request is not valid
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/validationProblemDetails"
+              example:
+                type: https://httpstatuses.com/400
+                title: One or more validation errors occurred.
+                status: 400
+                traceId: 00-00000000000000000000000000000000-0000000000000000-00
+                errors:
+                  code:
+                    - Authorization code is not valid.
+        429:
+          $ref: "#/components/responses/TooManyRequests"
+        500:
+          $ref: "#/components/responses/InternalServerError"
   /auth/jwks:
     get:
       tags:
@@ -311,7 +362,7 @@ paths:
       tags:
         - Status
       summary: Get Status
-      description: Retrieves status details for the running instance of the API.
+      description: Retrieves status details for the running instance of the server.
       operationId: getStatus
       responses:
         200:
