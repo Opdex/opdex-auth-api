@@ -81,8 +81,9 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Verify([FromBody] AccessTokenRequestBody body, CancellationToken cancellationToken)
     {
         var authCode = await _mediator.Send(new SelectAuthCodeQuery(body.Code), cancellationToken);
-        if (authCode is null) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Invalid authorization code");
-        
+        if (authCode is null || !authCode.Verify()) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Invalid or expired authorization code");
+
+        await _mediator.Send(new DeleteAuthCodeCommand(authCode), CancellationToken.None);
         var bearerToken = _jwtIssuer.Create(authCode.Signer);
         return Ok(bearerToken);
     }

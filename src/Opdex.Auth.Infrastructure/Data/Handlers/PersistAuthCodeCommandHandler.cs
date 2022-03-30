@@ -32,9 +32,9 @@ public class PersistAuthCodeCommandHandler : IRequestHandler<PersistAuthCodeComm
     {
         try
         {
-            var authSuccessEntity = new AuthCodeEntity(request.AuthCode);
+            var authCodeEntity = new AuthCodeEntity(request.AuthCode);
 
-            var command = DatabaseQuery.Create(SqlCommand, authSuccessEntity, CancellationToken.None);
+            var command = DatabaseQuery.Create(SqlCommand, authCodeEntity, CancellationToken.None);
 
             var result = await _dbContext.ExecuteCommandAsync(command);
 
