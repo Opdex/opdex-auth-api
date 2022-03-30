@@ -4,8 +4,11 @@ namespace Opdex.Auth.Domain;
 
 public class AuthCode
 {
+    private readonly bool _new;
+    
     public AuthCode(string address) : this(Guid.NewGuid(), address, DateTime.UtcNow.AddMinutes(1))
     {
+        _new = true;
     }
 
     public AuthCode(Guid value, string address, DateTime expiry)
@@ -18,4 +21,10 @@ public class AuthCode
     public Guid Value { get; }
     public string Signer { get; }
     public DateTime Expiry { get; }
+
+    public bool Verify()
+    {
+        if (_new) throw new InvalidOperationException("Cannot verify auth code before it is persisted");
+        return DateTime.UtcNow < Expiry;
+    }
 }
