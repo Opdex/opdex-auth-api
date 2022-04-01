@@ -4,27 +4,23 @@ namespace Opdex.Auth.Domain;
 
 public class AuthCode
 {
-    private readonly bool _new;
-    
-    public AuthCode(string address) : this(Guid.NewGuid(), address, DateTime.UtcNow.AddMinutes(1))
+    public AuthCode(string address, Guid stamp)
+        : this(Guid.NewGuid(), address, stamp, DateTime.UtcNow.AddMinutes(1))
     {
-        _new = true;
     }
 
-    public AuthCode(Guid value, string address, DateTime expiry)
+    public AuthCode(Guid value, string address, Guid stamp, DateTime expiry)
     {
         Value = value;
         Signer = Guard.Against.NullOrEmpty(address, nameof(address));
+        Stamp = stamp;
         Expiry = Guard.Against.OutOfRange(expiry, nameof(expiry), DateTime.MinValue, DateTime.UtcNow.AddMinutes(1));;
     }
 
     public Guid Value { get; }
     public string Signer { get; }
+    public Guid Stamp { get; }
     public DateTime Expiry { get; }
 
-    public bool Verify()
-    {
-        if (_new) throw new InvalidOperationException("Cannot verify auth code before it is persisted");
-        return DateTime.UtcNow < Expiry;
-    }
+    public bool Expired => DateTime.UtcNow < Expiry;
 }

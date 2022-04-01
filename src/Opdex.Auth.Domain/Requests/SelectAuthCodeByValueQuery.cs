@@ -2,9 +2,9 @@ using MediatR;
 
 namespace Opdex.Auth.Domain.Requests;
 
-public class SelectAuthCodeQuery : IRequest<AuthCode?>
+public class SelectAuthCodeByValueQuery : IRequest<AuthCode?>
 {
-    public SelectAuthCodeQuery(Guid value)
+    public SelectAuthCodeByValueQuery(Guid value)
     {
         Value = value;
     }

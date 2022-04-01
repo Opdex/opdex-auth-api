@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -11,38 +12,38 @@ using Xunit;
 
 namespace Opdex.Auth.Infrastructure.Tests.Data.Handlers;
 
-public class PersistAuthSuccessCommandHandlerTests
+public class PersistAuthCodeCommandHandlerTests
 {
     private readonly Mock<IDbContext> _dbContextMock;
-    private readonly PersistAuthSuccessCommandHandler _handler;
+    private readonly PersistAuthCodeCommandHandler _handler;
 
-    public PersistAuthSuccessCommandHandlerTests()
+    public PersistAuthCodeCommandHandlerTests()
     {
         _dbContextMock = new Mock<IDbContext>();
-        _handler = new PersistAuthSuccessCommandHandler(_dbContextMock.Object, new NullLogger<PersistAuthSuccessCommandHandler>());
+        _handler = new PersistAuthCodeCommandHandler(_dbContextMock.Object, new NullLogger<PersistAuthCodeCommandHandler>());
     }
 
     [Fact]
-    public async Task Insert_AuthSuccess_CorrectTable()
+    public async Task Insert_AuthCode_CorrectTable()
     {
         // Arrange
-        var authSuccess = new AuthSuccess("CONNECTION_ID", "PAe1RRxnRVZtbS83XQ4soyjwJUDSjaJAKZ");
-        var command = new PersistAuthSuccessCommand(authSuccess);
+        var authCode = new AuthCode("PAe1RRxnRVZtbS83XQ4soyjwJUDSjaJAKZ", Guid.NewGuid());
+        var command = new PersistAuthCodeCommand(authCode);
 
         // Act
         await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         _dbContextMock.Verify(callTo => callTo.ExecuteCommandAsync(
-            It.Is<DatabaseQuery>(q => q.Sql.StartsWith("INSERT INTO auth_success"))), Times.Once);
+            It.Is<DatabaseQuery>(q => q.Sql.StartsWith("INSERT INTO auth_access_code"))), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_Success_ReturnTrue()
+    public async Task Handle_Code_ReturnTrue()
     {
         // Arrange
-        var authSuccess = new AuthSuccess("CONNECTION_ID", "PAe1RRxnRVZtbS83XQ4soyjwJUDSjaJAKZ");
-        var command = new PersistAuthSuccessCommand(authSuccess);
+        var authCode = new AuthCode("PAe1RRxnRVZtbS83XQ4soyjwJUDSjaJAKZ", Guid.NewGuid());
+        var command = new PersistAuthCodeCommand(authCode);
 
         _dbContextMock.Setup(db => db.ExecuteCommandAsync(It.IsAny<DatabaseQuery>())).ReturnsAsync(1);
 
@@ -57,8 +58,8 @@ public class PersistAuthSuccessCommandHandlerTests
     public async Task Handle_Fail_ReturnFalse()
     {
         // Arrange
-        var authSuccess = new AuthSuccess("CONNECTION_ID", "PAe1RRxnRVZtbS83XQ4soyjwJUDSjaJAKZ");
-        var command = new PersistAuthSuccessCommand(authSuccess);
+        var authCode = new AuthCode("PAe1RRxnRVZtbS83XQ4soyjwJUDSjaJAKZ", Guid.NewGuid());
+        var command = new PersistAuthCodeCommand(authCode);
 
         _dbContextMock.Setup(db => db.ExecuteCommandAsync(It.IsAny<DatabaseQuery>())).ReturnsAsync(0);
 

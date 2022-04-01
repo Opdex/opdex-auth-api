@@ -1,7 +1,6 @@
-using System;
 using Ardalis.GuardClauses;
 
-namespace Opdex.Auth.Api.Helpers;
+namespace Opdex.Auth.Domain.Helpers;
 
 public static class Base64Extensions
 {

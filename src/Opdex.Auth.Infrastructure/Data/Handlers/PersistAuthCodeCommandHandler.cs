@@ -12,10 +12,12 @@ public class PersistAuthCodeCommandHandler : IRequestHandler<PersistAuthCodeComm
         $@"INSERT INTO auth_access_code (
                 {nameof(AuthCodeEntity.AccessCode)},
                 {nameof(AuthCodeEntity.Signer)},
+                {nameof(AuthCodeEntity.Stamp)},
                 {nameof(AuthCodeEntity.Expiry)}
               ) VALUES (
                 @{nameof(AuthCodeEntity.AccessCode)},
                 @{nameof(AuthCodeEntity.Signer)},
+                @{nameof(AuthCodeEntity.Stamp)},
                 @{nameof(AuthCodeEntity.Expiry)}
               );".RemoveExcessWhitespace();
     
@@ -44,8 +46,8 @@ public class PersistAuthCodeCommandHandler : IRequestHandler<PersistAuthCodeComm
         {
             using (_logger.BeginScope(new Dictionary<string, object>()
                    {
-                       { nameof(request.AuthCode.Value), request.AuthCode.Value },
-                       { nameof(request.AuthCode.Signer), request.AuthCode.Signer }
+                       { nameof(request.AuthCode.Signer), request.AuthCode.Signer },
+                       { nameof(request.AuthCode.Stamp), request.AuthCode.Stamp },
                    }))
             {
                 _logger.LogError(ex, $"Failure persisting auth code");
