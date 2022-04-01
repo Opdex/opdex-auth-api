@@ -10,6 +10,6 @@ public class AccessTokenRequestBodyValidator : AbstractValidator<AccessTokenRequ
         RuleFor(request => request.Code)
             .NotEmpty().WithMessage("Authorization code must not be empty.");
         RuleFor(request => request.CodeVerifier)
-            .MinimumLength(43).WithMessage("Code verifier must contain a minimum of 43 characters.");
+            .NotEmpty().WithMessage("Code verifier must not be empty.");
     }
 }
