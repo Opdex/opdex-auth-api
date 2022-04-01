@@ -84,4 +84,30 @@ public class Base64ExtensionsTests
         // Assert
         plainText.ToArray().Should().BeEquivalentTo(Encoding.UTF8.GetBytes("1234567890"));
     }
+
+    [Fact]
+    public void UrlSafeBase64_Encode_Success()
+    {
+        // Arrage
+        var value = "60086ac1a0a92156b546d5ad4fc49647732b06abec3c2ee2b08394f1006a1bc3";
+
+        // Act
+        var encoded = Base64Extensions.UrlSafeBase64Encode(Encoding.UTF8.GetBytes(value));
+
+        // Assert
+        encoded.Should().Be("NjAwODZhYzFhMGE5MjE1NmI1NDZkNWFkNGZjNDk2NDc3MzJiMDZhYmVjM2MyZWUyYjA4Mzk0ZjEwMDZhMWJjMw");
+    }
+
+    [Fact]
+    public void UrlSafeBase64_Decode_Success()
+    {
+        // Arrage
+        var value = "MTA4YjliZjU5OTA2OWJhMjk1NWE4OWRlYmM4YTAyZjhmMzliOThlYjc0MTJjZjE4MjgxYzI4NjJlMWU5MDdiMg";
+
+        // Act
+        var decoded = Base64Extensions.UrlSafeBase64Decode(value);
+
+        // Assert
+        decoded.ToArray().Should().BeEquivalentTo(Encoding.UTF8.GetBytes("108b9bf599069ba2955a89debc8a02f8f39b98eb7412cf18281c2862e1e907b2"));
+    }
 }

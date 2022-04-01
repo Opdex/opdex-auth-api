@@ -1,3 +1,4 @@
+using System.Text;
 using Ardalis.GuardClauses;
 using Opdex.Auth.Domain.Helpers;
 
@@ -34,8 +35,16 @@ public class AuthSession
         return CodeChallengeMethod switch
         {
             CodeChallengeMethod.Plain => CodeChallenge == codeVerifier,
-            CodeChallengeMethod.S256 => CodeChallenge == Base64Extensions.UrlSafeBase64Encode(Sha256Extensions.Hash(codeVerifier)),
+            CodeChallengeMethod.S256 => VerifyS256(codeVerifier),
             _ => throw new InvalidOperationException("Challenge method not recognized")
         };
+    }
+
+    private bool VerifyS256(string codeVerifier)
+    {
+        var sb = new StringBuilder();
+        var sha = Sha256Extensions.Hash(codeVerifier);
+        foreach (var b in sha) sb.Append(b.ToString("x2"));
+        return CodeChallenge == Base64Extensions.UrlSafeBase64Encode(Encoding.UTF8.GetBytes(sb.ToString()));
     }
 }
