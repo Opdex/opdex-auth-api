@@ -30,19 +30,19 @@ public class AuthController : ControllerBase
         _mediator = Guard.Against.Null(mediator, nameof(mediator));
         _jwtIssuer = Guard.Against.Null(jwtIssuer, nameof(jwtIssuer));
     }
-    
+
     [HttpGet("authorize")]
     public async Task<IActionResult> Authorize([FromQuery] AuthorizeRequestQuery query, CancellationToken cancellationToken)
     {
         var session = new AuthSession(query.CodeChallenge, query.CodeChallengeMethod);
         var authSessionCreated = await _mediator.Send(new PersistAuthSessionCommand(session), cancellationToken);
         if (!authSessionCreated) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status500InternalServerError);
-        
+
         var authPromptUri = $"{_promptOptions.Value.Prompt}?redirect_uri={query.RedirectUri}&stamp={session.Stamp}";
-        if (query.State is not null) authPromptUri += $"?state={query.State}";
+        if (query.State is not null) authPromptUri += $"&state={query.State}";
         return Redirect(authPromptUri);
     }
-    
+
     [HttpPost("token")]
     public async Task<IActionResult> RequestToken([FromForm] AccessTokenRequestBody body, CancellationToken cancellationToken)
     {
@@ -53,12 +53,12 @@ public class AuthController : ControllerBase
         var authSession = await _mediator.Send(new SelectAuthSessionByIdQuery(authCode.Stamp), cancellationToken);
         if (!authSession.Verify(body.CodeVerifier))
             return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Unable to verify code challenge");
-        
+
         await _mediator.Send(new DeleteAuthCodeCommand(authCode), CancellationToken.None);
         var bearerToken = _jwtIssuer.Create(authCode.Signer);
         return Ok(bearerToken);
     }
-    
+
     [HttpGet("keys")]
     public async Task<ActionResult<JsonWebKeySetResponse>> GetKeys()
     {
