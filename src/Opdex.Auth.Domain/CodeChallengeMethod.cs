@@ -2,5 +2,6 @@ namespace Opdex.Auth.Domain;
 
 public enum CodeChallengeMethod
 {
-    Plain, S256
+    Plain = 1,
+    S256 = 2
 }

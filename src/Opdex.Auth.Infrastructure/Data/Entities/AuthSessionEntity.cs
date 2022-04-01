@@ -13,13 +13,13 @@ public class AuthSessionEntity
     {
         Guard.Against.Null(authSession, nameof(authSession));
         Id = authSession.Stamp;
-        Challenge = authSession.CodeChallenge;
-        ChallengeMethod = authSession.CodeChallengeMethod;
+        CodeChallenge = authSession.CodeChallenge;
+        CodeChallengeMethod = authSession.CodeChallengeMethod;
         ConnectionId = authSession.ConnectionId;
     }
 
     public Guid Id { get; set; }
-    public string Challenge { get; set; }
-    public CodeChallengeMethod ChallengeMethod { get; set; }
+    public string CodeChallenge { get; set; }
+    public CodeChallengeMethod CodeChallengeMethod { get; set; }
     public string? ConnectionId { get; set; }
 }

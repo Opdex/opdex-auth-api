@@ -11,8 +11,8 @@ public class SelectAuthSessionByIdQueryHandler : IRequestHandler<SelectAuthSessi
     private static readonly string SqlQuery =
         @$"SELECT
                 {nameof(AuthSessionEntity.Id)},
-                {nameof(AuthSessionEntity.Challenge)},
-                {nameof(AuthSessionEntity.ChallengeMethod)},
+                {nameof(AuthSessionEntity.CodeChallenge)},
+                {nameof(AuthSessionEntity.CodeChallengeMethod)},
                 {nameof(AuthSessionEntity.ConnectionId)}
             FROM auth_session
             WHERE {nameof(AuthSessionEntity.Id)} = @{nameof(SqlParams.Stamp)}
@@ -33,7 +33,7 @@ public class SelectAuthSessionByIdQueryHandler : IRequestHandler<SelectAuthSessi
 
         var result = await _dbContext.ExecuteFindAsync<AuthSessionEntity?>(query);
 
-        return result is null ? null : new AuthSession(result.Id, result.Challenge, result.ChallengeMethod, result.ConnectionId);
+        return result is null ? null : new AuthSession(result.Id, result.CodeChallenge, result.CodeChallengeMethod, result.ConnectionId);
     }
 
     private sealed class SqlParams

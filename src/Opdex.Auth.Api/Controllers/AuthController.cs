@@ -35,7 +35,8 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Authorize([FromQuery] AuthorizeRequestQuery query, CancellationToken cancellationToken)
     {
         var session = new AuthSession(query.CodeChallenge, query.CodeChallengeMethod);
-        await _mediator.Send(new PersistAuthSessionCommand(session), cancellationToken);
+        var authSessionCreated = await _mediator.Send(new PersistAuthSessionCommand(session), cancellationToken);
+        if (!authSessionCreated) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status500InternalServerError);
         
         var authPromptUri = $"{_promptOptions.Value.Prompt}?redirect_uri={query.RedirectUri}&stamp={session.Stamp}";
         if (query.State is not null) authPromptUri += $"?state={query.State}";
