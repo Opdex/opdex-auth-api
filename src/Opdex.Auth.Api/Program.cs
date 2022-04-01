@@ -62,6 +62,7 @@ TelemetryDebugWriter.IsTracingDisabled = true;
 
 builder.Services.Configure<StatusOptions>(builder.Configuration);
 builder.Services.Configure<ApiOptions>(builder.Configuration);
+builder.Services.Configure<PromptOptions>(builder.Configuration);
 builder.Services.Configure<EncryptionOptions>(builder.Configuration.GetSection(EncryptionOptions.ConfigurationSectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.ConfigurationSectionName));
 builder.Services.Configure<AzureKeyVaultOptions>(builder.Configuration.GetSection(AzureKeyVaultOptions.ConfigurationSectionName));
@@ -113,7 +114,7 @@ builder.Services.AddProblemDetails(options =>
 
 builder.Services.AddFluentValidation();
 builder.Services.AddValidatorsFromAssembly(typeof(IApiAssemblyMarker).Assembly);
-builder.Services.AddControllers()
+builder.Services.AddControllers(config => config.ValueProviderFactories.Add(new SnakeCaseValueProviderFactory()))
                 .AddJsonOptions(config => config.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
 builder.Services.AddProblemDetailsConventions();
 builder.Services.AddEndpointsApiExplorer();

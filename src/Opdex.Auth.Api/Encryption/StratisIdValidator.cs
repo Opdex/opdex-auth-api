@@ -3,8 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
 using FluentResults;
-using Opdex.Auth.Api.Helpers;
 using Opdex.Auth.Domain.Cirrus;
+using Opdex.Auth.Domain.Helpers;
 using SSAS.NET;
 
 namespace Opdex.Auth.Api.Encryption;

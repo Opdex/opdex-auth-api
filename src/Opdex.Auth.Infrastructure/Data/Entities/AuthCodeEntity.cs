@@ -14,10 +14,12 @@ public class AuthCodeEntity
         Guard.Against.Null(authCode, nameof(authCode));
         AccessCode = authCode.Value;
         Signer = authCode.Signer;
+        Stamp = authCode.Stamp;
         Expiry = authCode.Expiry;
     }
     
     public Guid AccessCode { get; set; }
     public string Signer { get; set;  }
+    public Guid Stamp { get; set; }
     public DateTime Expiry { get; set; }
 }

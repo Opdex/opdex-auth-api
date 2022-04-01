@@ -1,6 +1,6 @@
 using System.Text;
 using FluentAssertions;
-using Opdex.Auth.Api.Helpers;
+using Opdex.Auth.Domain.Helpers;
 using Xunit;
 
 namespace Opdex.Auth.Api.Tests.Helpers;

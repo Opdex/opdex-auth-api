@@ -11,9 +11,9 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using Moq;
 using Opdex.Auth.Api.Encryption;
-using Opdex.Auth.Api.Helpers;
 using Opdex.Auth.Api.SignalR;
 using Opdex.Auth.Domain;
+using Opdex.Auth.Domain.Helpers;
 using Opdex.Auth.Domain.Requests;
 using SSAS.NET;
 using Xunit;
@@ -27,7 +27,6 @@ public class AuthHubTests
     private readonly Mock<HubCallerContext> _hubCallerContextMock;
     private readonly Mock<IAuthClient> _callerClientMock;
     private readonly Mock<IMediator> _mediatorMock;
-    private readonly Mock<IJwtIssuer> _jwtIssuerMock;
     
     private readonly AuthHub _hub;
 
@@ -40,11 +39,10 @@ public class AuthHubTests
         hubCallerClientsMock.Setup(callTo => callTo.Caller).Returns(_callerClientMock.Object);
 
         _mediatorMock = new Mock<IMediator>();
-        _jwtIssuerMock = new Mock<IJwtIssuer>();
         var apiOptionsMock = new Mock<IOptionsSnapshot<ApiOptions>>();
         apiOptionsMock.Setup(callTo => callTo.Value).Returns(new ApiOptions { Authority = _baseUri.ToString().TrimEnd('/') });
 
-        _hub = new AuthHub(_mediatorMock.Object, _twoWayEncryptionProvider, _jwtIssuerMock.Object, apiOptionsMock.Object)
+        _hub = new AuthHub(_mediatorMock.Object, _twoWayEncryptionProvider, apiOptionsMock.Object)
         {
             Context = _hubCallerContextMock.Object,
             Clients = hubCallerClientsMock.Object
@@ -52,14 +50,35 @@ public class AuthHubTests
     }
 
     [Fact]
-    public void GetStratisId_TwoWayEncryptionProvider_Encrypt()
+    public async Task GetStratisId_StampNotGuid_ThrowArgumentNullException()
+    {
+        // Arrange
+        _hubCallerContextMock.Setup(callTo => callTo.ConnectionId).Returns("MY_C8NN3CTI8N_ID");
+
+        // Act
+        Func<Task<string>> Act() => () => _hub.GetStratisId("NOT_A_GUID");
+
+        // Assert
+        await Act().Should().ThrowExactlyAsync<ArgumentException>();
+    }
+
+    [Fact]
+    public async Task GetStratisId_TwoWayEncryptionProvider_Encrypt()
     {
         // Arrange
         const string connectionId = "MY_C8NN3CTI8N_ID";
         _hubCallerContextMock.Setup(callTo => callTo.ConnectionId).Returns(connectionId);
 
+        var authSession = new AuthSession(Guid.NewGuid(), "challenge", CodeChallengeMethod.Plain);
+        _mediatorMock
+            .Setup(callTo => callTo.Send(It.IsAny<SelectAuthSessionByIdQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(authSession);
+        _mediatorMock
+            .Setup(callTo => callTo.Send(It.IsAny<PersistAuthSessionCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
         // Act
-         _hub.GetStratisId();
+         await _hub.GetStratisId(Guid.NewGuid().ToString());
 
         // Assert
         _twoWayEncryptionProvider.EncryptCalls.Count.Should().Be(1);
@@ -72,32 +91,48 @@ public class AuthHubTests
     }
 
     [Fact]
-    public void GetStratisId_StratisId_WellFormatted()
+    public async Task GetStratisId_StratisId_WellFormatted()
     {
         // Arrange
         _hubCallerContextMock.Setup(callTo => callTo.ConnectionId).Returns("8rn4UxxPl2m4jd8DDa9fir920");
 
+        var authSession = new AuthSession(Guid.NewGuid(), "challenge", CodeChallengeMethod.Plain);
+        _mediatorMock
+            .Setup(callTo => callTo.Send(It.IsAny<SelectAuthSessionByIdQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(authSession);
+        _mediatorMock
+            .Setup(callTo => callTo.Send(It.IsAny<PersistAuthSessionCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
         var expected = Encoding.UTF8.GetBytes("3NCRYPT3DCONNECTIONID");
         _twoWayEncryptionProvider.WhenEncryptCalled(() => expected);
-
+        
         // Act
-        var encrypted = _hub.GetStratisId();
+        var encrypted = await _hub.GetStratisId(Guid.NewGuid().ToString());
 
         // Assert
         StratisId.TryParse(encrypted, out _).Should().Be(true);
     }
 
     [Fact]
-    public void GetStratisId_Callback_FromConfig()
+    public async Task GetStratisId_Callback_FromConfig()
     {
         // Arrange
         _hubCallerContextMock.Setup(callTo => callTo.ConnectionId).Returns("8rn4UxxPl2m4jd8DDa9fir920");
+
+        var authSession = new AuthSession(Guid.NewGuid(), "challenge", CodeChallengeMethod.Plain);
+        _mediatorMock
+            .Setup(callTo => callTo.Send(It.IsAny<SelectAuthSessionByIdQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(authSession);
+        _mediatorMock
+            .Setup(callTo => callTo.Send(It.IsAny<PersistAuthSessionCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         var expected = Encoding.UTF8.GetBytes("3NCRYPT3DCONNECTIONID");
         _twoWayEncryptionProvider.WhenEncryptCalled(() => expected);
 
         // Act
-        var encrypted = _hub.GetStratisId();
+        var encrypted = await _hub.GetStratisId(Guid.NewGuid().ToString());
 
         // Assert
         _ = StratisId.TryParse(encrypted, out var stratisId);
@@ -105,16 +140,24 @@ public class AuthHubTests
     }
 
     [Fact]
-    public void GetStratisId_Uid_ConnectionIdUrlSafeBase64Encoded()
+    public async Task GetStratisId_Uid_ConnectionIdUrlSafeBase64Encoded()
     {
         // Arrange
         _hubCallerContextMock.Setup(callTo => callTo.ConnectionId).Returns("8rn4UxxPl2m4jd8DDa9fir920");
+
+        var authSession = new AuthSession(Guid.NewGuid(), "challenge", CodeChallengeMethod.Plain);
+        _mediatorMock
+            .Setup(callTo => callTo.Send(It.IsAny<SelectAuthSessionByIdQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(authSession);
+        _mediatorMock
+            .Setup(callTo => callTo.Send(It.IsAny<PersistAuthSessionCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         var expected = Encoding.UTF8.GetBytes("3NCRYPT3DCONNECTIONID");
         _twoWayEncryptionProvider.WhenEncryptCalled(() => expected);
 
         // Act
-        var encrypted = _hub.GetStratisId();
+        var encrypted = await _hub.GetStratisId(Guid.NewGuid().ToString());
 
         // Assert
         _ = StratisId.TryParse(encrypted, out var stratisId);
@@ -169,78 +212,6 @@ public class AuthHubTests
         // Assert
         succeeded.Should().Be(false);
         _callerClientMock.Verify(callTo => callTo.OnAuthenticated(It.IsAny<string>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Reconnect_NoAuthSuccessRecord_DoNotAuthenticate()
-    {
-        // Arrange
-        var unixTime10MinsFromNow = DateTimeOffset.UtcNow.AddMinutes(10).ToUnixTimeSeconds();
-        const string previousConnectionId = "QU5FWENSWVBURURDT05ORUNUSU9OSUQ";
-        const string uid = "JztkuBy8zCCHSoPBmQ1D9YEUnNGYmRGE8j6EshsLRiSIF2aYLQiemjKsfHtqBFEJhxLjwtGRrzS3CZk6MDxa0A";
-        var stratisId = $"sid:{_baseUri.Host}/v1/auth/callback?uid={uid}&exp={unixTime10MinsFromNow}";
-
-        _twoWayEncryptionProvider.WhenDecryptCalled(() => $"{previousConnectionId}{unixTime10MinsFromNow}");
-
-        _mediatorMock.Setup(callTo => callTo.Send(It.IsAny<SelectAuthSuccessByConnectionIdQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AuthSuccess?)null);
-
-        // Act
-        var succeeded = await _hub.Reconnect(previousConnectionId, stratisId);
-
-        // Assert
-        succeeded.Should().Be(false);
-        _mediatorMock.Verify(callTo => callTo.Send(It.IsAny<SelectAuthSuccessByConnectionIdQuery>(), It.IsAny<CancellationToken>()), Times.Once);
-        _callerClientMock.Verify(callTo => callTo.OnAuthenticated(It.IsAny<string>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Reconnect_ExpiredAuthSuccessRecord_DoNotAuthenticate()
-    {
-        // Arrange
-        var unixTime10MinsFromNow = DateTimeOffset.UtcNow.AddMinutes(10).ToUnixTimeSeconds();
-        const string previousConnectionId = "QU5FWENSWVBURURDT05ORUNUSU9OSUQ";
-        const string connectionId = "GO73rdOHET7W1FAuWp96Tw205af2011";
-        const string uid = "JztkuBy8zCCHSoPBmQ1D9YEUnNGYmRGE8j6EshsLRiSIF2aYLQiemjKsfHtqBFEJhxLjwtGRrzS3CZk6MDxa0A";
-        var stratisId = $"sid:{_baseUri.Host}/v1/auth/callback?uid={uid}&exp={unixTime10MinsFromNow}";
-
-        _twoWayEncryptionProvider.WhenDecryptCalled(() => $"{previousConnectionId}{unixTime10MinsFromNow}");
-
-        _mediatorMock.Setup(callTo => callTo.Send(It.IsAny<SelectAuthSuccessByConnectionIdQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AuthSuccess(connectionId, "PAe1RRxnRVZtbS83XQ4soyjwJUDSjaJAKZ", DateTime.UtcNow.AddMinutes(-5)));
-
-        // Act
-        var succeeded = await _hub.Reconnect(previousConnectionId, stratisId);
-
-        // Assert
-        succeeded.Should().Be(false);
-        _mediatorMock.Verify(callTo => callTo.Send(It.IsAny<SelectAuthSuccessByConnectionIdQuery>(), It.IsAny<CancellationToken>()), Times.Once);
-        _callerClientMock.Verify(callTo => callTo.OnAuthenticated(It.IsAny<string>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Reconnect_Valid_Authenticate()
-    {
-        // Arrange
-        var unixTime10MinsFromNow = DateTimeOffset.UtcNow.AddMinutes(10).ToUnixTimeSeconds();
-        const string previousConnectionId = "QU5FWENSWVBURURDT05ORUNUSU9OSUQ";
-        const string connectionId = "GO73rdOHET7W1FAuWp96Tw205af2011";
-        const string uid = "JztkuBy8zCCHSoPBmQ1D9YEUnNGYmRGE8j6EshsLRiSIF2aYLQiemjKsfHtqBFEJhxLjwtGRrzS3CZk6MDxa0A";
-        var stratisId = $"sid:{_baseUri.Host}/v1/auth/callback?uid={uid}&exp={unixTime10MinsFromNow}";
-        const string jwt = "bearer-token";
-
-        _twoWayEncryptionProvider.WhenDecryptCalled(() => $"{previousConnectionId}{unixTime10MinsFromNow}");
-
-        _mediatorMock.Setup(callTo => callTo.Send(It.IsAny<SelectAuthSuccessByConnectionIdQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AuthSuccess(connectionId, "PAe1RRxnRVZtbS83XQ4soyjwJUDSjaJAKZ"));
-        _jwtIssuerMock.Setup(callTo => callTo.Create(It.IsAny<string>())).Returns(jwt);
-
-        // Act
-        var succeeded = await _hub.Reconnect(previousConnectionId, stratisId);
-
-        // Assert
-        succeeded.Should().Be(true);
-        _callerClientMock.Verify(callTo => callTo.OnAuthenticated(jwt), Times.Once);
     }
 }
 

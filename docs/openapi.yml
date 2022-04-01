@@ -14,6 +14,8 @@ servers:
 tags:
   - name: Authentication
     description: Authenticate with Opdex
+  - name: SSAS
+    description: Integrate a wallet with SSAS
   - name: Status
     description: View health and API status
 components: 
@@ -91,10 +93,14 @@ components:
       type: object
       required:
         - code
+        - code_verifier
       properties: 
         code:
           type: string
           description: Authorization code issued by the server
+        code_verifier:
+          type: string
+          description: Verifier that can be used to verify the code_challenge
     stratisSignatureAuthRequest:
       type: object
       required:
@@ -145,72 +151,91 @@ components:
         commit:
           type: string
           description: The commit hash for the version of the code that is running
-paths: 
-  /auth:
+paths:
+  /auth/authorize:
     get:
       tags:
         - Authentication
-      summary: Get Stratis Id
+      summary: Obtain Authorization Grant
       description: >
-        Returns a new Stratis Id to sign and authenticate.
-        See the [specification](https://github.com/Opdex/SSAS) for further detail.
-      operationId: getStratisId
+        Supports a PKCE authorization code grant type. A client should redirect the user-agent to this endpoint, which will take the user to the authorization prompt. If the user authenticates successfully, the user-agent will then be redirected to the `redirect_uri`. An authorization code will be included in the query string, along with the state parameter, if initially provided.
+      operationId: authorize
+      parameters:
+        - in: query
+          name: redirect_uri
+          schema:
+            type: string
+          description: Upon successful authentication, the user-agent will be redirected to this URI. This must be an absolute URI and may include additional query parameters. The authorization code will be included as part of the query string with the parameter name `code`.
+          required: true
+          example: https://app.example.com/success
+        - in: query
+          name: code_challenge
+          schema:
+            type: string
+          description: A client should generate a pseudo-random URL-safe 43 character code_verifier. This can be done by generating a random 32 character ASCII string, then base64url encoding the result. The code_challenge_method should then be applied to the code_verifier, to create the code_challenge.
+          required: true
+          example: Qjk1QjRFMDQ3MzY0OEZDNjg5RTU4RTZCNzY3RTc1OEQ3QjczMUYwODBCNUUwOEExOTkwMTY0N0Y2MzA5OUZBQw
+        - in: query
+          name: code_challenge_method
+          schema:
+            enum:
+              - plain
+              - S256
+            default: plain
+          description: >
+            Describes the transformation of the code verifier:
+              * **plain:** code_challenge = code_verifier
+              * **S256:** code_challenge = BASE64URL-ENCODE(SHA256(ASCII(code_verifier)))
+            
+            Usage of S256 is recommended for improved security.
+          required: true
+          example: S256
+        - in: query
+          name: state
+          schema:
+            type: string
+          description: >
+            A non-guessable string that is unique to the user session. This is option, however it is recommended, as this will help mitigate CSRF attacks.
+          required: false
+          example: Nh5BBV5Yht
       responses:
-        200:
-          description: Stratis Id was created
-          content:
-            text/plain:
+        302:
+          description: User-Agent redirected to the authorization prompt
+          headers:
+            Location:
               schema:
                 type: string
-                example: sid:auth-api.opdex.com/v1/auth?uid=nd0ZT7yrMpLPa207v1uGk0uu9NNcKILgn0HLJXpLQxGKuI9RKnugLdZPz_05a2tX-rCuN0tHM6z3_Qs1yi0Lyg&exp=1643082000
+              description: Authorization prompt URL
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/InternalServerError"
+  /auth/token:
     post:
       tags:
         - Authentication
-      summary: Stratis Signature Auth
+      summary: Retrieve Access Token
       description: >
-        Responds to a request from a Stratis Signature Auth signer directly.
-        See the [specification](https://github.com/Opdex/SSAS) for further detail.
-      operationId: authenticate
-      parameters:
-        - name: uid
-          in: query
-          description: Unique identifier for the Stratis ID
-          required: true
-          schema:
-            type: string
-          example: Lf5t5J-oAn3CZ9YY27JnK5XtpbjIOD3BxyvHhd80AQ4fsJ7o0J8i5uSjzHZ9jeS3
-        - name: exp
-          in: query
-          description: Unix timestamp indicating when the signature expires
-          required: true
-          schema:
-            type: integer
-            format: int64
-            minimum: 0
-            maximum: 273402300799
-          example: 1641220000
+        Retrieves an access token that is signed by the server.
+      operationId: getAccessToken
       requestBody:
-        description: The Stratis Signature Auth body
+        description: Access token request parameters
         required: true
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
-              $ref: "#/components/schemas/stratisSignatureAuthRequest"
+              $ref: "#/components/schemas/accessTokenRequest"
             example:
-              signature: H9xjfnvqucCmi3sfEKUes0qL4mD9PrZ/al78+Ka440t6WH5Qh0AIgl5YlxPa2cyuXdwwDa2OYUWR/0ocL6jRZLc=
-              publicKey: tQ9RukZsB6bBsenHnGSo1q69CJzWGnxohm
+              code: "b0907a58-d583-480d-a468-a58e6fc7f472"
+              code_verifier: ZGZMVEU2WVQ1Mlp0NnljVHNqOVRlSTJyVmNpcjVEM04
       responses:
         200:
-          description: Signature was validated successfully and an authorization code was retrieved
+          description: Access token retrieved
           content:
             text/plain:
               schema:
                 type: string
-                example: "b0907a58-d583-480d-a468-a58e6fc7f472"
+                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ3YWxsZXQiOiJQUFFkZVhkaldEQnpWTFVqZ1d3aTRtRlA0WTFtaHVOY1J1IiwibmJmIjoxNjQzMDgxNzM5LCJleHAiOjE2NDMxNjgxMzcsImlhdCI6MTY0MzA4MTczN30.xjiwjPxzgYbQlP6ON2-Mg3S7m-dWww41FISVXhOGEFY
         400:
           description: The request is not valid
           content:
@@ -223,16 +248,43 @@ paths:
                 status: 400
                 traceId: 00-00000000000000000000000000000000-0000000000000000-00
                 errors:
-                  exp:
-                    - Expiration date must be a unix timestamp.
+                  code:
+                    - Authorization code is not valid.
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/InternalServerError"
-  /auth/callback:
-    post:
+  /auth/jwks:
+    get:
       tags:
         - Authentication
+      summary: Get JSON Web Key Set
+      description: >
+        Retrieves public keys that can used to verify tokens returned by the server.
+      operationId: getJsonWebKeySet
+      responses:
+        200:
+          description: JSON Web Key Set found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/jsonWebKeySetResponse"
+              example:
+                keys:
+                  - n: 1dTDvWnEHm_fOwX8xpQ8YzF0zvO1ERAARCsJz63z9cv3W94G78iyqUX7YkYUdIwe-Z25RS-M871-_zqdlDdCpxPtQPJjNa8VoGn7jvWmihBuCmwDPcF7Kw3gBwposHO7eFU3JLKdErDgrKBALp-Pm5EMGXFPeNCa7PKQAqdWrm0amDGHaNDjycCOojyYo_9RXlTAMia927iMT-Kch7eQQ3AN5k5rAODilNYMRafq9IriI-hUP5Eak7LojD_6Z_H_qIhEj2WIgf8jplywWOrklbUvf1W74jNThioQ012VEStGcNz7XqqUarCdewWi16BwKybCJc2ahMCLXKd_FGFn9Q
+                    e: AQAB
+                    alg: RS256
+                    kid: e2ba0368610e4c69974c3177ea52f9f5
+                    kty: RSA
+                    use: sig                  
+        429:
+          $ref: "#/components/responses/TooManyRequests"
+        500:
+          $ref: "#/components/responses/InternalServerError"
+  /ssas/callback:
+    post:
+      tags:
+        - SSAS
       summary: Stratis Signature Auth Callback
       description: >
         Responds to a request from a Stratis Signature Auth signer's wallet.
@@ -283,76 +335,6 @@ paths:
                 errors:
                   exp:
                     - Expiration date must be a unix timestamp.
-        429:
-          $ref: "#/components/responses/TooManyRequests"
-        500:
-          $ref: "#/components/responses/InternalServerError"
-  /auth/verify:
-    post:
-      tags:
-        - Authentication
-      summary: Retrieve Access Token
-      description: >
-        Retrieves an access token that is signed by the server.
-      operationId: getAccessToken
-      requestBody:
-        description: Access token request parameters
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/accessTokenRequest"
-            example:
-              code: "b0907a58-d583-480d-a468-a58e6fc7f472"
-      responses:
-        200:
-          description: Access token retrieved
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ3YWxsZXQiOiJQUFFkZVhkaldEQnpWTFVqZ1d3aTRtRlA0WTFtaHVOY1J1IiwibmJmIjoxNjQzMDgxNzM5LCJleHAiOjE2NDMxNjgxMzcsImlhdCI6MTY0MzA4MTczN30.xjiwjPxzgYbQlP6ON2-Mg3S7m-dWww41FISVXhOGEFY
-        400:
-          description: The request is not valid
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/validationProblemDetails"
-              example:
-                type: https://httpstatuses.com/400
-                title: One or more validation errors occurred.
-                status: 400
-                traceId: 00-00000000000000000000000000000000-0000000000000000-00
-                errors:
-                  code:
-                    - Authorization code is not valid.
-        429:
-          $ref: "#/components/responses/TooManyRequests"
-        500:
-          $ref: "#/components/responses/InternalServerError"
-  /auth/jwks:
-    get:
-      tags:
-        - Authentication
-      summary: Get JSON Web Key Set
-      description: >
-        Retrieves public keys that can used to verify tokens returned by the server.
-      operationId: getJsonWebKeySet
-      responses:
-        200:
-          description: JSON Web Key Set found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/jsonWebKeySetResponse"
-              example:
-                keys:
-                  - n: 1dTDvWnEHm_fOwX8xpQ8YzF0zvO1ERAARCsJz63z9cv3W94G78iyqUX7YkYUdIwe-Z25RS-M871-_zqdlDdCpxPtQPJjNa8VoGn7jvWmihBuCmwDPcF7Kw3gBwposHO7eFU3JLKdErDgrKBALp-Pm5EMGXFPeNCa7PKQAqdWrm0amDGHaNDjycCOojyYo_9RXlTAMia927iMT-Kch7eQQ3AN5k5rAODilNYMRafq9IriI-hUP5Eak7LojD_6Z_H_qIhEj2WIgf8jplywWOrklbUvf1W74jNThioQ012VEStGcNz7XqqUarCdewWi16BwKybCJc2ahMCLXKd_FGFn9Q
-                    e: AQAB
-                    alg: RS256
-                    kid: e2ba0368610e4c69974c3177ea52f9f5
-                    kty: RSA
-                    use: sig                  
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:
