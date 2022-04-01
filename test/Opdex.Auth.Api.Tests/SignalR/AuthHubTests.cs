@@ -27,7 +27,7 @@ public class AuthHubTests
     private readonly Mock<HubCallerContext> _hubCallerContextMock;
     private readonly Mock<IAuthClient> _callerClientMock;
     private readonly Mock<IMediator> _mediatorMock;
-    
+
     private readonly AuthHub _hub;
 
     public AuthHubTests()
@@ -106,7 +106,7 @@ public class AuthHubTests
 
         var expected = Encoding.UTF8.GetBytes("3NCRYPT3DCONNECTIONID");
         _twoWayEncryptionProvider.WhenEncryptCalled(() => expected);
-        
+
         // Act
         var encrypted = await _hub.GetStratisId(Guid.NewGuid().ToString());
 
@@ -136,7 +136,7 @@ public class AuthHubTests
 
         // Assert
         _ = StratisId.TryParse(encrypted, out var stratisId);
-        stratisId.Callback.Should().StartWith($"{_baseUri.Host}/v1/auth/callback");
+        stratisId.Callback.Should().StartWith($"{_baseUri.Host}/v1/ssas/callback");
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public class AuthHubTests
         // Arrange
         var unixTime10MinsAgo = DateTimeOffset.UtcNow.AddMinutes(-10).ToUnixTimeSeconds();
         var previousConnectionId = "QU5FWENSWVBURURDT05ORUNUSU9OSUQ";
-        var stratisId = $"sid:{_baseUri.Host}/v1/auth/callback?uid=MtLXa7ZbmtGjKeCpZC-Y1cjNLDsVz4tDfBqahJssXOvsmUVSnYa5nclYnSZxhwcN1gjxrp4ydqoo3KRSKMdBaw&exp={unixTime10MinsAgo}";
+        var stratisId = $"sid:{_baseUri.Host}/v1/ssas/callback?uid=MtLXa7ZbmtGjKeCpZC-Y1cjNLDsVz4tDfBqahJssXOvsmUVSnYa5nclYnSZxhwcN1gjxrp4ydqoo3KRSKMdBaw&exp={unixTime10MinsAgo}";
 
         // Act
         var succeeded = await _hub.Reconnect(previousConnectionId, stratisId);
@@ -202,7 +202,7 @@ public class AuthHubTests
         const string connectionId = "DIFFERENT CONNECTION ID";
         var unixTime10MinsFromNow = DateTimeOffset.UtcNow.AddMinutes(10).ToUnixTimeSeconds();
         const string previousConnectionId = "QU5FWENSWVBURURDT05ORUNUSU9OSUQ";
-        var stratisId = $"sid:{_baseUri.Host}/v1/auth/callback?uid=JztkuBy8zCCHSoPBmQ1D9YEUnNGYmRGE8j6EshsLRiSIF2aYLQiemjKsfHtqBFEJhxLjwtGRrzS3CZk6MDxa0A&exp={unixTime10MinsFromNow}";
+        var stratisId = $"sid:{_baseUri.Host}/v1/ssas/callback?uid=JztkuBy8zCCHSoPBmQ1D9YEUnNGYmRGE8j6EshsLRiSIF2aYLQiemjKsfHtqBFEJhxLjwtGRrzS3CZk6MDxa0A&exp={unixTime10MinsFromNow}";
 
         _twoWayEncryptionProvider.WhenDecryptCalled(() => $"{connectionId}{unixTime10MinsFromNow}");
 
