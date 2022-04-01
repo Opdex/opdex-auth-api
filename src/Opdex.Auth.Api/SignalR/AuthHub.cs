@@ -31,17 +31,17 @@ public class AuthHub : Hub<IAuthClient>
     public async Task<string> GetStratisId(string stamp)
     {
         if (!Guid.TryParse(stamp, out var sessionId)) throw new ArgumentException("Invalid stamp format", nameof(stamp));
-        
+
         var authSession = await _mediator.Send(new SelectAuthSessionByIdQuery(sessionId));
         if (authSession is null) throw new AuthSessionConnectionException();
-        
+
         authSession.EstablishPrompt(Context.ConnectionId);
-        
+
         var sessionLinked = await _mediator.Send(new PersistAuthSessionCommand(authSession));
         if (!sessionLinked) throw new AuthSessionConnectionException();
-        
+
         var expiry = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds();
-        return new StratisId($"{_apiOptions.Value.Authority}/v1/auth/callback", CreateUid(), expiry).ToString();
+        return new StratisId($"{_apiOptions.Value.Authority}/v1/ssas/callback", CreateUid(), expiry).ToString();
 
         string CreateUid()
         {
@@ -64,7 +64,7 @@ public class AuthHub : Hub<IAuthClient>
 
         var authCode = await _mediator.Send(new SelectAuthCodeByStampQuery(authSession.Stamp));
         if (authCode is null) return true;
-        
+
         await Clients.Caller.OnAuthenticated(authCode.Value.ToString());
 
         return true;
