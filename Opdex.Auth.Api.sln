@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opdex.Auth.Domain", "src\Op
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opdex.Auth.Infrastructure.Tests", "test\Opdex.Auth.Infrastructure.Tests\Opdex.Auth.Infrastructure.Tests.csproj", "{03486E71-B500-495B-9C3E-5822AC8D6752}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Opdex.Auth.Domain.Tests", "test\Opdex.Auth.Domain.Tests\Opdex.Auth.Domain.Tests.csproj", "{CEBDDBEE-C310-4791-8CF2-C5E008C8C002}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,6 +48,10 @@ Global
 		{03486E71-B500-495B-9C3E-5822AC8D6752}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{03486E71-B500-495B-9C3E-5822AC8D6752}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{03486E71-B500-495B-9C3E-5822AC8D6752}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CEBDDBEE-C310-4791-8CF2-C5E008C8C002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEBDDBEE-C310-4791-8CF2-C5E008C8C002}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CEBDDBEE-C310-4791-8CF2-C5E008C8C002}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CEBDDBEE-C310-4791-8CF2-C5E008C8C002}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{85F7FAFF-5E5C-47CD-901F-B0AF06F617A0} = {99AD07E5-32DA-45A3-B52D-F96505294411}
@@ -53,5 +59,6 @@ Global
 		{E9EA6E35-BDEF-45F2-8DE7-9D5DCF674BC7} = {99AD07E5-32DA-45A3-B52D-F96505294411}
 		{88007869-53FC-4843-972F-CB70B4F6BE1B} = {99AD07E5-32DA-45A3-B52D-F96505294411}
 		{03486E71-B500-495B-9C3E-5822AC8D6752} = {FB55B41E-F945-4B70-9C86-B5D427B726E9}
+		{CEBDDBEE-C310-4791-8CF2-C5E008C8C002} = {FB55B41E-F945-4B70-9C86-B5D427B726E9}
 	EndGlobalSection
 EndGlobal

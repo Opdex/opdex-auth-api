@@ -34,12 +34,12 @@ public class AuthHub : Hub<IAuthClient>
         
         var authSession = await _mediator.Send(new SelectAuthSessionByIdQuery(sessionId));
         if (authSession is null) throw new AuthSessionConnectionException();
-        
+
         authSession.EstablishPrompt(Context.ConnectionId);
         
         var sessionLinked = await _mediator.Send(new PersistAuthSessionCommand(authSession));
         if (!sessionLinked) throw new AuthSessionConnectionException();
-        
+
         var expiry = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds();
         return new StratisId($"{_apiOptions.Value.Authority}/v1/auth/callback", CreateUid(), expiry).ToString();
 

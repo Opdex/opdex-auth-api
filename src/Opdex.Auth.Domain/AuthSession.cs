@@ -25,7 +25,7 @@ public class AuthSession
 
     public void EstablishPrompt(string connectionId)
     {
-        if (ConnectionId is not null) throw new InvalidOperationException("Connection already associated with session");
+        if (ConnectionId is not null && ConnectionId != connectionId) throw new InvalidOperationException("Connection already associated with session");
         ConnectionId = Guard.Against.Null(connectionId);
     }
 
