@@ -48,9 +48,7 @@ public class AuthSessionTests
         sb.ToString().Should().Be(expectedSha);
 
         var challenge = Base64Extensions.UrlSafeBase64Encode(Encoding.UTF8.GetBytes(sb.ToString()));
-        var challengeTwo = Base64Extensions.UrlSafeBase64Encode(Sha256Extensions.Hash(codeVerifier));
 
         challenge.Should().Be("YWViZmJhMjMxZDg3NzBmYjFhNTE5OTIwNzMyMWFjMDkyMTA4OWQ5YzQ3ZTMyYzYzYTBkNjlkNWNlNGY2ZDQzZg");
-        challengeTwo.Should().Be("YWViZmJhMjMxZDg3NzBmYjFhNTE5OTIwNzMyMWFjMDkyMTA4OWQ5YzQ3ZTMyYzYzYTBkNjlkNWNlNGY2ZDQzZg");
     }
 }
