@@ -69,7 +69,7 @@ public class AuthHubTests
         const string connectionId = "MY_C8NN3CTI8N_ID";
         _hubCallerContextMock.Setup(callTo => callTo.ConnectionId).Returns(connectionId);
 
-        var authSession = new AuthSession(Guid.NewGuid(), "challenge", CodeChallengeMethod.Plain);
+        var authSession = new AuthSession(Guid.NewGuid(), "https://app.opdex.com", "challenge", CodeChallengeMethod.Plain);
         _mediatorMock
             .Setup(callTo => callTo.Send(It.IsAny<SelectAuthSessionByIdQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(authSession);
@@ -96,7 +96,7 @@ public class AuthHubTests
         // Arrange
         _hubCallerContextMock.Setup(callTo => callTo.ConnectionId).Returns("8rn4UxxPl2m4jd8DDa9fir920");
 
-        var authSession = new AuthSession(Guid.NewGuid(), "challenge", CodeChallengeMethod.Plain);
+        var authSession = new AuthSession(Guid.NewGuid(), "https://app.opdex.com", "challenge", CodeChallengeMethod.Plain);
         _mediatorMock
             .Setup(callTo => callTo.Send(It.IsAny<SelectAuthSessionByIdQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(authSession);
@@ -120,7 +120,7 @@ public class AuthHubTests
         // Arrange
         _hubCallerContextMock.Setup(callTo => callTo.ConnectionId).Returns("8rn4UxxPl2m4jd8DDa9fir920");
 
-        var authSession = new AuthSession(Guid.NewGuid(), "challenge", CodeChallengeMethod.Plain);
+        var authSession = new AuthSession(Guid.NewGuid(), "https://app.opdex.com", "challenge", CodeChallengeMethod.Plain);
         _mediatorMock
             .Setup(callTo => callTo.Send(It.IsAny<SelectAuthSessionByIdQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(authSession);
@@ -145,7 +145,7 @@ public class AuthHubTests
         // Arrange
         _hubCallerContextMock.Setup(callTo => callTo.ConnectionId).Returns("8rn4UxxPl2m4jd8DDa9fir920");
 
-        var authSession = new AuthSession(Guid.NewGuid(), "challenge", CodeChallengeMethod.Plain);
+        var authSession = new AuthSession(Guid.NewGuid(), "https://app.opdex.com", "challenge", CodeChallengeMethod.Plain);
         _mediatorMock
             .Setup(callTo => callTo.Send(It.IsAny<SelectAuthSessionByIdQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(authSession);

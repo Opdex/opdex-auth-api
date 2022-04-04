@@ -3,7 +3,7 @@ using Opdex.Auth.Api.Validation;
 using SSAS.NET;
 using Xunit;
 
-namespace Opdex.Auth.Api.Tests.Validator;
+namespace Opdex.Auth.Api.Tests.Validation;
 
 public class StratisSignatureAuthCallbackBodyValidatorTests
 {

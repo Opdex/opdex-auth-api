@@ -34,7 +34,7 @@ public class AuthController : ControllerBase
     [HttpGet("authorize")]
     public async Task<IActionResult> Authorize([FromQuery] AuthorizeRequestQuery query, CancellationToken cancellationToken)
     {
-        var session = new AuthSession(query.CodeChallenge, query.CodeChallengeMethod);
+        var session = new AuthSession(new Uri(query.RedirectUri), query.CodeChallenge, query.CodeChallengeMethod);
         var authSessionCreated = await _mediator.Send(new PersistAuthSessionCommand(session), cancellationToken);
         if (!authSessionCreated) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status500InternalServerError);
 
@@ -55,7 +55,7 @@ public class AuthController : ControllerBase
             return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Unable to verify code challenge");
 
         await _mediator.Send(new DeleteAuthCodeCommand(authCode), CancellationToken.None);
-        var bearerToken = _jwtIssuer.Create(authCode.Signer);
+        var bearerToken = _jwtIssuer.Create(authCode.Signer, authSession.Audience);
         return Ok(bearerToken);
     }
 

@@ -3,7 +3,7 @@ using FluentAssertions;
 using Opdex.Auth.Domain.Helpers;
 using Xunit;
 
-namespace Opdex.Auth.Api.Tests.Helpers;
+namespace Opdex.Auth.Domain.Tests.Helpers;
 
 public class Base64ExtensionsTests
 {
@@ -84,30 +84,73 @@ public class Base64ExtensionsTests
         // Assert
         plainText.ToArray().Should().BeEquivalentTo(Encoding.UTF8.GetBytes("1234567890"));
     }
-
     [Fact]
-    public void UrlSafeBase64_Encode_Success()
+    public void TryUrlSafeBase64Decode_EmptyString_ReturnFalse()
     {
-        // Arrage
-        const string value = "60086ac1a0a92156b546d5ad4fc49647732b06abec3c2ee2b08394f1006a1bc3";
+        // Arrange
+        const string base64Encoded = "";
 
         // Act
-        var encoded = Base64Extensions.UrlSafeBase64Encode(Encoding.UTF8.GetBytes(value));
+        var canDecode = Base64Extensions.TryUrlSafeBase64Decode(base64Encoded, out var plainText);
 
         // Assert
-        encoded.Should().Be("NjAwODZhYzFhMGE5MjE1NmI1NDZkNWFkNGZjNDk2NDc3MzJiMDZhYmVjM2MyZWUyYjA4Mzk0ZjEwMDZhMWJjMw");
+        canDecode.Should().Be(false);
+        plainText.ToArray().Should().BeEquivalentTo(Encoding.UTF8.GetBytes(""));
     }
 
     [Fact]
-    public void UrlSafeBase64_Decode_Success()
+    public void TryUrlSafeBase64Decode_JustPadding_ReturnFalse()
     {
-        // Arrage
-        const string value = "MTA4YjliZjU5OTA2OWJhMjk1NWE4OWRlYmM4YTAyZjhmMzliOThlYjc0MTJjZjE4MjgxYzI4NjJlMWU5MDdiMg";
+        // Arrange
+        const string base64Encoded = "==";
 
         // Act
-        var decoded = Base64Extensions.UrlSafeBase64Decode(value);
+        var canDecode = Base64Extensions.TryUrlSafeBase64Decode(base64Encoded, out var plainText);
 
         // Assert
-        decoded.ToArray().Should().BeEquivalentTo(Encoding.UTF8.GetBytes("108b9bf599069ba2955a89debc8a02f8f39b98eb7412cf18281c2862e1e907b2"));
+        canDecode.Should().Be(false);
+        plainText.ToArray().Should().BeEquivalentTo(Encoding.UTF8.GetBytes(""));
+    }
+
+    [Fact]
+    public void TryUrlSafeBase64Decode_InvalidCharacter_ReturnFalse()
+    {
+        // Arrange
+        const string base64UrlEncoded = "@";
+
+        // Act
+        var canDecode = Base64Extensions.TryUrlSafeBase64Decode(base64UrlEncoded, out var plainText);
+
+        // Assert
+        canDecode.Should().Be(false);
+        plainText.ToArray().Should().BeEquivalentTo(Encoding.UTF8.GetBytes(""));
+    }
+
+    [Fact]
+    public void TryUrlSafeBase64Decode_ValidDataWithoutPadding_ReturnTrue()
+    {
+        // Arrange
+        const string base64UrlEncoded = "Mzk3YTkyNjVlMDhlYjgxMjVlYzMxMTI1NzVjZmQxNjc0ODM4OTdjNGZhYjZkZDI5NDMxOGFmNGI2Zjk5MDQzYQ";
+
+        // Act
+        var canDecode = Base64Extensions.TryUrlSafeBase64Decode(base64UrlEncoded, out var plainText);
+
+        // Assert
+        canDecode.Should().Be(true);
+        plainText.ToArray().Should().BeEquivalentTo(Encoding.UTF8.GetBytes("397a9265e08eb8125ec3112575cfd167483897c4fab6dd294318af4b6f99043a"));
+    }
+
+    [Fact]
+    public void TryUrlSafeBase64Decode_ValidDataWithPadding_ReturnTrue()
+    {
+        // Arrange
+        const string base64UrlEncoded = "Mzk3YTkyNjVlMDhlYjgxMjVlYzMxMTI1NzVjZmQxNjc0ODM4OTdjNGZhYjZkZDI5NDMxOGFmNGI2Zjk5MDQzYQ==";
+
+        // Act
+        var canDecode = Base64Extensions.TryUrlSafeBase64Decode(base64UrlEncoded, out var plainText);
+
+        // Assert
+        canDecode.Should().Be(true);
+        plainText.ToArray().Should().BeEquivalentTo(Encoding.UTF8.GetBytes("397a9265e08eb8125ec3112575cfd167483897c4fab6dd294318af4b6f99043a"));
     }
 }

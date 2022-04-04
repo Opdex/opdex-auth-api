@@ -11,6 +11,7 @@ public class SelectAuthSessionByConnectionIdQueryHandler : IRequestHandler<Selec
     private static readonly string SqlQuery =
         @$"SELECT
                 {nameof(AuthSessionEntity.Id)},
+                {nameof(AuthSessionEntity.Audience)},
                 {nameof(AuthSessionEntity.CodeChallenge)},
                 {nameof(AuthSessionEntity.CodeChallengeMethod)},
                 {nameof(AuthSessionEntity.ConnectionId)}
@@ -33,7 +34,7 @@ public class SelectAuthSessionByConnectionIdQueryHandler : IRequestHandler<Selec
 
         var result = await _dbContext.ExecuteFindAsync<AuthSessionEntity?>(query);
 
-        return result is null ? null : new AuthSession(result.Id, result.CodeChallenge, result.CodeChallengeMethod, result.ConnectionId);
+        return result is null ? null : new AuthSession(result.Id, result.Audience, result.CodeChallenge, result.CodeChallengeMethod, result.ConnectionId);
     }
 
     private sealed class SqlParams

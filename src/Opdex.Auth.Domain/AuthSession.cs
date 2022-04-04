@@ -6,20 +6,22 @@ namespace Opdex.Auth.Domain;
 
 public class AuthSession
 {
-    public AuthSession(string codeChallenge, CodeChallengeMethod codeChallengeMethod)
-        : this(Guid.NewGuid(), codeChallenge, codeChallengeMethod)
+    public AuthSession(Uri redirectUri, string codeChallenge, CodeChallengeMethod codeChallengeMethod)
+        : this(Guid.NewGuid(), redirectUri.Authority, codeChallenge, codeChallengeMethod)
     {
     }
 
-    public AuthSession(Guid stamp, string codeChallenge, CodeChallengeMethod codeChallengeMethod, string? connectionId = null)
+    public AuthSession(Guid stamp, string audience, string codeChallenge, CodeChallengeMethod codeChallengeMethod, string? connectionId = null)
     {
         Stamp = stamp;
+        Audience = Guard.Against.Null(audience);
         CodeChallenge = Guard.Against.Null(codeChallenge);
         CodeChallengeMethod = Guard.Against.EnumOutOfRange(codeChallengeMethod, nameof(codeChallengeMethod));
         ConnectionId = connectionId;
     }
 
     public Guid Stamp { get; }
+    public string Audience { get; }
     public string CodeChallenge { get; }
     public CodeChallengeMethod CodeChallengeMethod { get; }
     public string? ConnectionId { get; private set; }
