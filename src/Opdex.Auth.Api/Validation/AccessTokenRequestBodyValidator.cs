@@ -8,8 +8,11 @@ public class AccessTokenRequestBodyValidator : AbstractValidator<AccessTokenRequ
     public AccessTokenRequestBodyValidator()
     {
         RuleFor(request => request.Code)
-            .NotEmpty().WithMessage("Authorization code must not be empty.");
+            .NotEmpty().WithMessage("Authorization code must not be empty");
         RuleFor(request => request.CodeVerifier)
-            .NotEmpty().WithMessage("Code verifier must not be empty.");
+            .NotEmpty().WithMessage("Code verifier must not be empty")
+            .MinimumLength(43).WithMessage("Code verifier must contain a minimum of 43 characters")
+            .MaximumLength(128).WithMessage("Code verifier must contain a maximum of 128 characters")
+            .Matches(OAuth2Standards.CodeVerifierAndChallengeRegex).WithMessage("Code verifier must only contain characters defined in RFC7636");
     }
 }

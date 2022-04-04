@@ -30,7 +30,7 @@ public class JwtIssuer : IJwtIssuer
         _apiOptions = Guard.Against.Null(apiOptions);
     }
 
-    public string Create(string walletAddress)
+    public string Create(string walletAddress, string audience)
     {
         Guard.Against.NullOrEmpty(walletAddress, nameof(walletAddress));
 
@@ -40,6 +40,7 @@ public class JwtIssuer : IJwtIssuer
         {
             Subject = new ClaimsIdentity(),
             Issuer = _apiOptions.Value.Authority,
+            Audience = audience,
             // Todo: This should technically be much lower once refresh tokens are implemented, maybe back to 1 hour.
             Expires = DateTime.UtcNow.AddHours(24),
             IssuedAt = DateTime.UtcNow,

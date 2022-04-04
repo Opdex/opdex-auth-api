@@ -12,7 +12,7 @@ public class AuthSessionTests
     public void EstablishPrompt_AlreadyEstablishedDifferentConnection_ThrowInvalidOperationException()
     {
         // Arrange
-        var authSession = new AuthSession("code_challenge", CodeChallengeMethod.Plain);
+        var authSession = new AuthSession(new Uri("https://app.opdex.com"), "code_challenge", CodeChallengeMethod.Plain);
         authSession.EstablishPrompt("connection_id");
 
         // Act
@@ -26,7 +26,7 @@ public class AuthSessionTests
     public void EstablishPrompt_AlreadyEstablishedSameConnection_DoNotThrow()
     {
         // Arrange
-        var authSession = new AuthSession("code_challenge", CodeChallengeMethod.Plain);
+        var authSession = new AuthSession(new Uri("https://app.opdex.com"), "code_challenge", CodeChallengeMethod.Plain);
         authSession.EstablishPrompt("connection_id");
 
         // Act
@@ -34,6 +34,13 @@ public class AuthSessionTests
 
         // Assert
         Act().Should().NotThrow();
+    }
+
+    [Fact]
+    public void Create_SetAudience_FromRedirectUriAuthority()
+    {
+        var authSession = new AuthSession(new Uri("https://app.opdex.com:1303/success"), "code_challenge", CodeChallengeMethod.Plain);
+        authSession.Audience.Should().Be("app.opdex.com:1303");
     }
 
     [Fact]

@@ -11,10 +11,12 @@ public class PersistAuthSessionCommandHandler : IRequestHandler<PersistAuthSessi
     private static readonly string InsertSqlCommand =
         $@"INSERT INTO auth_session (
                 {nameof(AuthSessionEntity.Id)},
+                {nameof(AuthSessionEntity.Audience)},
                 {nameof(AuthSessionEntity.CodeChallenge)},
                 {nameof(AuthSessionEntity.CodeChallengeMethod)}
               ) VALUES (
                 @{nameof(AuthSessionEntity.Id)},
+                @{nameof(AuthSessionEntity.Audience)},
                 @{nameof(AuthSessionEntity.CodeChallenge)},
                 @{nameof(AuthSessionEntity.CodeChallengeMethod)}
               );".RemoveExcessWhitespace();
