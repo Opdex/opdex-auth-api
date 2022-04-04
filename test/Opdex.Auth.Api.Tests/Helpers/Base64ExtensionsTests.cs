@@ -11,7 +11,7 @@ public class Base64ExtensionsTests
     public void UrlSafeBase64Encode_AdditionSign_SwapToDash()
     {
         // Arrange
-        var plainText = "14<+_~`/7'88";
+        const string plainText = "14<+_~`/7'88";
 
         // Act
         var encoded = Base64Extensions.UrlSafeBase64Encode(Encoding.UTF8.GetBytes(plainText));
@@ -24,7 +24,7 @@ public class Base64ExtensionsTests
     public void UrlSafeBase64Encode_ForwardSlashSign_SwapToUnderscore()
     {
         // Arrange
-        var plainText = "ZSWEDXCFRTGVBHYUJNMKIOL<>:P{\"?|}+_)(*&^%$£@!";
+        const string plainText = "ZSWEDXCFRTGVBHYUJNMKIOL<>:P{\"?|}+_)(*&^%$£@!";
 
         // Act
         var encoded = Base64Extensions.UrlSafeBase64Encode(Encoding.UTF8.GetBytes(plainText));
@@ -37,7 +37,7 @@ public class Base64ExtensionsTests
     public void UrlSafeBase64Encode_Padding_Remove()
     {
         // Arrange
-        var plainText = "1234567890";
+        const string plainText = "1234567890";
 
         // Act
         var encoded = Base64Extensions.UrlSafeBase64Encode(Encoding.UTF8.GetBytes(plainText));
@@ -50,7 +50,7 @@ public class Base64ExtensionsTests
     public void UrlSafeBase64_DashSign_Recognise()
     {
         // Arrange
-        var encoded = "MTQ8K19-YC83Jzg4";
+        const string encoded = "MTQ8K19-YC83Jzg4";
 
         // Act
         var plainText = Base64Extensions.UrlSafeBase64Decode(encoded);
@@ -63,7 +63,7 @@ public class Base64ExtensionsTests
     public void UrlSafeBase64_UnderscoreSign_Recognise()
     {
         // Arrange
-        var encoded = "WlNXRURYQ0ZSVEdWQkhZVUpOTUtJT0w8PjpQeyI_fH0rXykoKiZeJSTCo0Ah";
+        const string encoded = "WlNXRURYQ0ZSVEdWQkhZVUpOTUtJT0w8PjpQeyI_fH0rXykoKiZeJSTCo0Ah";
 
         // Act
         var plainText = Base64Extensions.UrlSafeBase64Decode(encoded);
@@ -76,7 +76,7 @@ public class Base64ExtensionsTests
     public void UrlSafeBase64_NoPadding_Recognise()
     {
         // Arrange
-        var encoded = "MTIzNDU2Nzg5MA";
+        const string encoded = "MTIzNDU2Nzg5MA";
 
         // Act
         var plainText = Base64Extensions.UrlSafeBase64Decode(encoded);
@@ -89,7 +89,7 @@ public class Base64ExtensionsTests
     public void UrlSafeBase64_Encode_Success()
     {
         // Arrage
-        var value = "60086ac1a0a92156b546d5ad4fc49647732b06abec3c2ee2b08394f1006a1bc3";
+        const string value = "60086ac1a0a92156b546d5ad4fc49647732b06abec3c2ee2b08394f1006a1bc3";
 
         // Act
         var encoded = Base64Extensions.UrlSafeBase64Encode(Encoding.UTF8.GetBytes(value));
@@ -102,7 +102,7 @@ public class Base64ExtensionsTests
     public void UrlSafeBase64_Decode_Success()
     {
         // Arrage
-        var value = "MTA4YjliZjU5OTA2OWJhMjk1NWE4OWRlYmM4YTAyZjhmMzliOThlYjc0MTJjZjE4MjgxYzI4NjJlMWU5MDdiMg";
+        const string value = "MTA4YjliZjU5OTA2OWJhMjk1NWE4OWRlYmM4YTAyZjhmMzliOThlYjc0MTJjZjE4MjgxYzI4NjJlMWU5MDdiMg";
 
         // Act
         var decoded = Base64Extensions.UrlSafeBase64Decode(value);

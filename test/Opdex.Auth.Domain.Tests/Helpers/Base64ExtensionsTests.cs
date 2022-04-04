@@ -127,7 +127,21 @@ public class Base64ExtensionsTests
     }
 
     [Fact]
-    public void TryUrlSafeBase64Decode_ValidData_ReturnTrue()
+    public void TryUrlSafeBase64Decode_ValidDataWithoutPadding_ReturnTrue()
+    {
+        // Arrange
+        const string base64UrlEncoded = "Mzk3YTkyNjVlMDhlYjgxMjVlYzMxMTI1NzVjZmQxNjc0ODM4OTdjNGZhYjZkZDI5NDMxOGFmNGI2Zjk5MDQzYQ";
+
+        // Act
+        var canDecode = Base64Extensions.TryUrlSafeBase64Decode(base64UrlEncoded, out var plainText);
+
+        // Assert
+        canDecode.Should().Be(true);
+        plainText.ToArray().Should().BeEquivalentTo(Encoding.UTF8.GetBytes("397a9265e08eb8125ec3112575cfd167483897c4fab6dd294318af4b6f99043a"));
+    }
+
+    [Fact]
+    public void TryUrlSafeBase64Decode_ValidDataWithPadding_ReturnTrue()
     {
         // Arrange
         const string base64UrlEncoded = "Mzk3YTkyNjVlMDhlYjgxMjVlYzMxMTI1NzVjZmQxNjc0ODM4OTdjNGZhYjZkZDI5NDMxOGFmNGI2Zjk5MDQzYQ==";

@@ -21,6 +21,8 @@ public static class Base64Extensions
         bytes = null;
         if (string.IsNullOrEmpty(value) || value.All(character => character == '=')) return false;
         
+        if (value.Length % 4 != 0) value = value.PadRight(value.Length + (4 - value.Length % 4), '=');
+        
         var base64Data = value.Replace('-', '+').Replace('_', '/');
         var base64DataWithoutPadding = value.TrimEnd('=');
         
