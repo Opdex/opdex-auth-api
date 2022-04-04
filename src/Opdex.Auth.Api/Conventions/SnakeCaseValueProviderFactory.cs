@@ -7,10 +7,16 @@ namespace Opdex.Auth.Api.Conventions;
 
 public class SnakeCaseValueProviderFactory : IValueProviderFactory
 {
-    public Task CreateValueProviderAsync(ValueProviderFactoryContext context)
+    public async Task CreateValueProviderAsync(ValueProviderFactoryContext context)
     {
         Guard.Against.Null(context);
-        context.ValueProviders.Add(new SnakeCaseQueryValueProvider(BindingSource.Query, context.ActionContext.HttpContext.Request.Query, CultureInfo.InvariantCulture));
-        return Task.CompletedTask;
+        var request = context.ActionContext.HttpContext.Request;
+        
+        context.ValueProviders.Add(new SnakeCaseQueryValueProvider(BindingSource.Query, request.Query, CultureInfo.InvariantCulture));
+
+        if (!request.HasFormContentType) return;
+        
+        var form = await request.ReadFormAsync();
+        context.ValueProviders.Add(new SnakeCaseFormValueProvider(BindingSource.Form, form, CultureInfo.InvariantCulture));
     }
 }
