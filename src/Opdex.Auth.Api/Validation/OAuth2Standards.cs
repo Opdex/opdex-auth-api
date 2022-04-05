@@ -9,5 +9,5 @@ public static class OAuth2Standards
     /// <summary>
     /// Supports inputting padded base64url values for increased flexibility
     /// </summary>
-    internal static readonly Regex Base64UrlEncodedCodeChallenge = new("^[a-zA-Z0-9-._~]*==$", RegexOptions.Compiled);
+    internal static readonly Regex PaddedBase64UrlEncodedCodeChallenge = new("^[a-zA-Z0-9-._~]*=$", RegexOptions.Compiled);
 }

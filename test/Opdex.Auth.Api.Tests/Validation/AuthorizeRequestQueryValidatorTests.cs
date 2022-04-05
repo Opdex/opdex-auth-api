@@ -110,13 +110,15 @@ public class AuthorizeRequestQueryValidatorTests
         result.ShouldNotHaveValidationErrorFor(r => r.CodeChallenge);
     }
     
-    [Fact]
-    public void CodeChallenge_S256_Invalid()
+    [Theory]
+    [InlineData("WU94eUh0akF4cElUM1o0dDhNUW9VTmxFNFM3MEE4Q3")] // 42 chars
+    [InlineData("WU94eUh0akF4cElUM1o0dDhNUW9VTmxFNFM3MEE4Q3kB")] // 44 chars unpadded
+    public void CodeChallenge_S256_Invalid(string challenge)
     {
         // Arrange
         var request = new AuthorizeRequestQuery
         {
-            CodeChallenge = "ZUhvMkw4dEw0Y2c5SE1ubjRnN2lVSnBhZzhKa01BQTA", // plain
+            CodeChallenge = challenge,
             CodeChallengeMethod = CodeChallengeMethod.S256
         };
 
@@ -128,8 +130,8 @@ public class AuthorizeRequestQueryValidatorTests
     }
 
     [Theory]
-    [InlineData("NzkzMDI2NGQ0Yjc5YmU2YWI1M2RhMDBmNTM2NGJlOTkxZjhhYzUwMWVhNGFiNWVkNTEyODA0MDMzYmQzYzdmNA")] // un-padded
-    [InlineData("NzkzMDI2NGQ0Yjc5YmU2YWI1M2RhMDBmNTM2NGJlOTkxZjhhYzUwMWVhNGFiNWVkNTEyODA0MDMzYmQzYzdmNA==")] // padded
+    [InlineData("WU94eUh0akF4cElUM1o0dDhNUW9VTmxFNFM3MEE4Q3k")] // un-padded
+    [InlineData("WU94eUh0akF4cElUM1o0dDhNUW9VTmxFNFM3MEE4Q3k=")] // padded
     public void CodeChallenge_S256_Valid(string challenge)
     {
         // Arrange
