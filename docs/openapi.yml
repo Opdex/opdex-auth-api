@@ -10,10 +10,11 @@ info:
     name: MIT
     url: https://github.com/Opdex/opdex-auth-api/blob/main/LICENSE
 servers:
+  - url: https://test-auth-api.opdex.com/v1
   - url: https://auth-api.opdex.com/v1
 tags:
   - name: Authentication
-    description: Authenticate with Opdex
+    description: Authenticate a user with Opdex
   - name: SSAS
     description: Integrate a wallet with SSAS
   - name: Status
@@ -100,7 +101,7 @@ components:
           description: Authorization code issued by the server
         code_verifier:
           type: string
-          description: Verifier that can be used to verify the code_challenge
+          description: Verifier that can be used to verify the `code_challenge`
     stratisSignatureAuthRequest:
       type: object
       required:
@@ -158,7 +159,7 @@ paths:
         - Authentication
       summary: Obtain Authorization Grant
       description: >
-        Supports a PKCE authorization code grant type. A client should redirect the user-agent to this endpoint, which will take the user to the authorization prompt. If the user authenticates successfully, the user-agent will then be redirected to the `redirect_uri`. An authorization code will be included in the query string, along with the state parameter, if initially provided.
+        Supports a PKCE authorization code grant type flow. A client should redirect the user-agent to this endpoint, which will take the user to the authorization prompt. If the user authenticates successfully, the user-agent will then be redirected to the `redirect_uri`. An authorization code will be included in the query string, along with the state parameter, if initially provided.
       operationId: authorize
       parameters:
         - in: query
@@ -172,7 +173,7 @@ paths:
           name: code_challenge
           schema:
             type: string
-          description: A client should generate a pseudo-random URL-safe 43 character code_verifier. This can be done by generating a random 32 character ASCII string, then base64url encoding the result. The code_challenge_method should then be applied to the code_verifier, to create the code_challenge.
+          description: A client should generate a pseudorandom URL-safe 43 character `code_verifier`. This can be done by generating a random 32-octect sequence, then base64url encoding the result. The `code_challenge_method` transformation should then be applied to the `code_verifier`, to create the `code_challenge`.
           required: true
           example: Qjk1QjRFMDQ3MzY0OEZDNjg5RTU4RTZCNzY3RTc1OEQ3QjczMUYwODBCNUUwOEExOTkwMTY0N0Y2MzA5OUZBQw
         - in: query
@@ -187,7 +188,7 @@ paths:
               * **plain:** code_challenge = code_verifier
               * **S256:** code_challenge = BASE64URL-ENCODE(SHA256(ASCII(code_verifier)))
             
-            Usage of S256 is recommended for improved security.
+            Usage of S256 is a _MUST_ when the client is capable, for improved security.
           required: true
           example: S256
         - in: query
@@ -195,7 +196,7 @@ paths:
           schema:
             type: string
           description: >
-            A non-guessable string that is unique to the user session. This is option, however it is recommended, as this will help mitigate CSRF attacks.
+            A non-guessable string that is unique to the user session. This is optional, however it is strongly recommended, as this will help mitigate CSRF attacks.
           required: false
           example: Nh5BBV5Yht
       responses:
@@ -216,7 +217,7 @@ paths:
         - Authentication
       summary: Retrieve Access Token
       description: >
-        Retrieves an access token that is signed by the server.
+        Retrieves an access token that is signed by the server. The access token contains the users wallet address in the payload, as well as additional data which allows it to be validated.
       operationId: getAccessToken
       requestBody:
         description: Access token request parameters
@@ -287,8 +288,7 @@ paths:
         - SSAS
       summary: Stratis Signature Auth Callback
       description: >
-        Responds to a request from a Stratis Signature Auth signer's wallet.
-        See the [specification](https://github.com/Opdex/SSAS) for further detail.
+        Responds to a request from a Stratis Signature Auth signer's wallet. See the [specification](https://github.com/Opdex/SSAS) for further detail. By implementing this callback, your wallet software can be used to connect with any dApp that integrates with SSAS or the Opdex Auth API.
       operationId: authenticateCallback
       parameters:
         - name: uid
