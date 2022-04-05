@@ -36,14 +36,14 @@ public class AuthorizeRequestQueryValidator : AbstractValidator<AuthorizeRequest
                     .When(request => request.CodeChallengeMethod == CodeChallengeMethod.S256);
                 // length without base64url padding
                 RuleFor(request => request.CodeChallenge)
-                    .Length(86).WithMessage("Code challenge must be base-64 URL encoded SHA256 hash for method S256")
+                    .Length(43).WithMessage("Code challenge must be base-64 URL encoded SHA256 hash for method S256")
                     .Matches(OAuth2Standards.CodeVerifierAndChallengeRegex).WithMessage("Code challenge must only contain characters defined in RFC7636")
-                    .When(request => !request.CodeChallenge.EndsWith("==") && request.CodeChallengeMethod == CodeChallengeMethod.S256);
+                    .When(request => !request.CodeChallenge.EndsWith("=") && request.CodeChallengeMethod == CodeChallengeMethod.S256);
                 // length with base64url padding
                 RuleFor(request => request.CodeChallenge)
-                    .Length(88).WithMessage("Code challenge must be base-64 URL encoded SHA256 hash for method S256")
-                    .Matches(OAuth2Standards.Base64UrlEncodedCodeChallenge).WithMessage("Code challenge must only contain characters defined in RFC7636")
-                    .When(request => request.CodeChallenge.EndsWith("==") && request.CodeChallengeMethod == CodeChallengeMethod.S256);
+                    .Length(44).WithMessage("Code challenge must be base-64 URL encoded SHA256 hash for method S256")
+                    .Matches(OAuth2Standards.PaddedBase64UrlEncodedCodeChallenge).WithMessage("Code challenge must only contain characters defined in RFC7636")
+                    .When(request => request.CodeChallenge.EndsWith("=") && request.CodeChallengeMethod == CodeChallengeMethod.S256);
             });
         
         RuleFor(request => request.CodeChallengeMethod)

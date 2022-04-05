@@ -1,7 +1,5 @@
 using System;
-using System.Text;
 using FluentAssertions;
-using Opdex.Auth.Domain.Helpers;
 using Xunit;
 
 namespace Opdex.Auth.Domain.Tests;
@@ -44,18 +42,61 @@ public class AuthSessionTests
     }
 
     [Fact]
-    public void S256_Verification()
+    public void Verify_Plain_Invalid()
     {
-        const string codeVerifier = "081431351748401491c87831fc6f63e5";
-        const string expectedSha = "aebfba231d8770fb1a5199207321ac0921089d9c47e32c63a0d69d5ce4f6d43f";
-        var sb = new StringBuilder();
+        // Arrange
+        const string codeChallenge = "wyBSD6pIB9DU_dXhEmH2LSkMYNAkxND5mCAh3qzsTFI";
+        const string codeVerifier = "WU94eUh0akF4cElUM1o0dDhNUW9VTmxFNFM3MEE4Q3k";
+        var authSession = new AuthSession(new Uri("https://app.opdex.com"), codeChallenge, CodeChallengeMethod.Plain);
+        
+        // Act
+        var verify = authSession.Verify(codeVerifier);
+        
+        // Assert
+        verify.Should().Be(false);
+    }
 
-        var sha = Sha256Extensions.Hash(codeVerifier);
-        foreach (var b in sha) sb.Append(b.ToString("x2"));
-        sb.ToString().Should().Be(expectedSha);
+    [Fact]
+    public void Verify_Plain_Valid()
+    {
+        // Arrange
+        const string codeChallenge = "wyBSD6pIB9DU_dXhEmH2LSkMYNAkxND5mCAh3qzsTFI";
+        const string codeVerifier = "wyBSD6pIB9DU_dXhEmH2LSkMYNAkxND5mCAh3qzsTFI";
+        var authSession = new AuthSession(new Uri("https://app.opdex.com"), codeChallenge, CodeChallengeMethod.Plain);
+        
+        // Act
+        var verify = authSession.Verify(codeVerifier);
+        
+        // Assert
+        verify.Should().Be(true);
+    }
+    [Fact]
+    public void Verify_S256_Invalid()
+    {
+        // Arrange
+        const string codeChallenge = "wyBSD6pIB9DU_dXhEmH2LSkMYNAkxND5mCAh3qzsTFI";
+        const string codeVerifier = "wyBSD6pIB9DU_dXhEmH2LSkMYNAkxND5mCAh3qzsTFI";
+        var authSession = new AuthSession(new Uri("https://app.opdex.com"), codeChallenge, CodeChallengeMethod.S256);
+        
+        // Act
+        var verify = authSession.Verify(codeVerifier);
+        
+        // Assert
+        verify.Should().Be(false);
+    }
 
-        var challenge = Base64Extensions.UrlSafeBase64Encode(Encoding.UTF8.GetBytes(sb.ToString()));
-
-        challenge.Should().Be("YWViZmJhMjMxZDg3NzBmYjFhNTE5OTIwNzMyMWFjMDkyMTA4OWQ5YzQ3ZTMyYzYzYTBkNjlkNWNlNGY2ZDQzZg");
+    [Fact]
+    public void Verify_S256_Valid()
+    {
+        // Arrange
+        const string codeChallenge = "wyBSD6pIB9DU_dXhEmH2LSkMYNAkxND5mCAh3qzsTFI";
+        const string codeVerifier = "WU94eUh0akF4cElUM1o0dDhNUW9VTmxFNFM3MEE4Q3k";
+        var authSession = new AuthSession(new Uri("https://app.opdex.com"), codeChallenge, CodeChallengeMethod.S256);
+        
+        // Act
+        var verify = authSession.Verify(codeVerifier);
+        
+        // Assert
+        verify.Should().Be(true);
     }
 }
