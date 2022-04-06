@@ -50,6 +50,7 @@ public class JwtIssuer : IJwtIssuer
             }
         };
 
+        tokenDescriptor.Subject.AddClaim(new Claim(JwtRegisteredClaimNames.Sub, walletAddress));
         tokenDescriptor.Subject.AddClaim(new Claim("wallet", walletAddress));
 
         var jwt = tokenHandler.CreateToken(tokenDescriptor);
