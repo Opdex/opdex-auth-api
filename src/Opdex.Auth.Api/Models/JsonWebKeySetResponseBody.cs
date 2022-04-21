@@ -3,9 +3,9 @@ using Opdex.Auth.Api.Encryption;
 
 namespace Opdex.Auth.Api.Models;
 
-public class JsonWebKeySetResponse
+public class JsonWebKeySetResponseBody
 {
-    public JsonWebKeySetResponse(IEnumerable<RsaPubJsonWebKeyItem> keys)
+    public JsonWebKeySetResponseBody(IEnumerable<RsaPubJsonWebKeyItem> keys)
     {
         Keys = keys;
     }

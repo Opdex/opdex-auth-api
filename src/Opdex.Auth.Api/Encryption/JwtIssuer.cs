@@ -15,6 +15,8 @@ namespace Opdex.Auth.Api.Encryption;
 
 public class JwtIssuer : IJwtIssuer
 {
+    public static readonly TimeSpan TokenLifetime = TimeSpan.FromHours(1);
+    
     private readonly string _keyId;
     private readonly string _keyIdHeaderValue;
     private readonly IOptionsSnapshot<ApiOptions> _apiOptions;
@@ -41,8 +43,7 @@ public class JwtIssuer : IJwtIssuer
             Subject = new ClaimsIdentity(),
             Issuer = _apiOptions.Value.Authority,
             Audience = audience,
-            // Todo: This should technically be much lower once refresh tokens are implemented, maybe back to 1 hour.
-            Expires = DateTime.UtcNow.AddHours(24),
+            Expires = DateTime.UtcNow + TokenLifetime,
             IssuedAt = DateTime.UtcNow,
             SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256)
             {

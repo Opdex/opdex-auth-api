@@ -44,6 +44,14 @@ public class DbContext : IDbContext
         return await Execute(query, async c => await connection.QuerySingleOrDefaultAsync<TEntity>(c));
     }
 
+    public async Task<IEnumerable<TEntity>> ExecuteQueryAsync<TEntity>(DatabaseQuery query)
+    {
+        Guard.Against.Null(query, nameof(query));
+        
+        await using var connection = _databaseSettings.Create();
+        return await Execute(query, async c => await connection.QueryAsync<TEntity>(c));
+    }
+
     public async Task<int> ExecuteCommandAsync(DatabaseQuery query)
     {
         Guard.Against.Null(query, nameof(query));

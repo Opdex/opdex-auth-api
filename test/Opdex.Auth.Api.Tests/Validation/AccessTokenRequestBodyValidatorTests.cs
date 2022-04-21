@@ -16,10 +16,77 @@ public class AccessTokenRequestBodyValidatorTests
     }
 
     [Fact]
+    public void GrantType_Invalid()
+    {
+        // Arrange
+        var request = new TokenRequestBody { GrantType = default };
+
+        // Act
+        var result = _validator.TestValidate(request);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(r => r.GrantType);
+    }
+
+    [Theory]
+    [InlineData(GrantType.Code)]
+    [InlineData(GrantType.RefreshToken)]
+    public void GrantType_Valid(GrantType grantType)
+    {
+        // Arrange
+        var request = new TokenRequestBody { GrantType = grantType };
+
+        // Act
+        var result = _validator.TestValidate(request);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(r => r.GrantType);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("23CharacterAlphaNumeric")]
+    [InlineData("24_CHAR_NOT_ALPHANUMERIC")]
+    [InlineData("AlphaNumericCharsLength25")]
+    public void RefreshToken_Invalid(string token)
+    {
+        // Arrange
+        var request = new TokenRequestBody
+        {
+            GrantType = GrantType.RefreshToken,
+            RefreshToken = token
+        };
+
+        // Act
+        var result = _validator.TestValidate(request);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(r => r.RefreshToken);
+    }
+
+    [Fact]
+    public void RefreshToken_Valid()
+    {
+        // Arrange
+        var request = new TokenRequestBody
+        {
+            GrantType = GrantType.RefreshToken,
+            RefreshToken = "24AlphanumericCharacters"
+        };
+
+        // Act
+        var result = _validator.TestValidate(request);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(r => r.RefreshToken);
+    }
+
+    [Fact]
     public void Code_Invalid()
     {
         // Arrange
-        var request = new AccessTokenRequestBody();
+        var request = new TokenRequestBody { GrantType = GrantType.Code };
 
         // Act
         var result = _validator.TestValidate(request);
@@ -32,8 +99,9 @@ public class AccessTokenRequestBodyValidatorTests
     public void Code_Valid()
     {
         // Arrange
-        var request = new AccessTokenRequestBody
+        var request = new TokenRequestBody
         {
+            GrantType = GrantType.Code,
             Code = Guid.NewGuid()
         };
 
@@ -53,8 +121,9 @@ public class AccessTokenRequestBodyValidatorTests
     public void CodeVerifier_Invalid(string verifier)
     {
         // Arrange
-        var request = new AccessTokenRequestBody
+        var request = new TokenRequestBody
         {
+            GrantType = GrantType.Code,
             CodeVerifier = verifier
         };
 
@@ -71,8 +140,9 @@ public class AccessTokenRequestBodyValidatorTests
     public void CodeVerifier_Valid(string verifier)
     {
         // Arrange
-        var request = new AccessTokenRequestBody
+        var request = new TokenRequestBody
         {
+            GrantType = GrantType.Code,
             CodeVerifier = verifier
         };
 

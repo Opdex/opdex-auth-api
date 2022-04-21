@@ -36,13 +36,5 @@ public class SelectAuthCodeByValueQueryHandler : IRequestHandler<SelectAuthCodeB
         return result is null ? null : new AuthCode(result.AccessCode, result.Signer, result.Stamp, result.Expiry);
     }
 
-    private sealed class SqlParams
-    {
-        internal SqlParams(Guid accessCode)
-        {
-            AccessCode = accessCode;
-        }
-
-        public Guid AccessCode { get; }
-    }
+    private sealed record SqlParams(Guid AccessCode);
 }

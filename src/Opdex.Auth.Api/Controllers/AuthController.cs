@@ -44,24 +44,60 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("token")]
-    public async Task<IActionResult> RequestToken([FromForm] AccessTokenRequestBody body, CancellationToken cancellationToken)
+    public async Task<IActionResult> RequestToken([FromForm] TokenRequestBody body, CancellationToken cancellationToken)
     {
-        var authCode = await _mediator.Send(new SelectAuthCodeByValueQuery(body.Code), cancellationToken);
-        if (authCode is null || !authCode.Expired)
-            return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Invalid or expired authorization code");
+        var accessToken = "";
+        AuthSuccess? authSuccess;
+        
+        switch (body.GrantType)
+        {
+            case GrantType.Code:
+            {
+                var authCode = await _mediator.Send(new SelectAuthCodeByValueQuery(body.Code), cancellationToken);
+                if (authCode is null || !authCode.Expired)
+                    return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Invalid or expired authorization code");
 
-        var authSession = await _mediator.Send(new SelectAuthSessionByIdQuery(authCode.Stamp), cancellationToken);
-        if (!authSession.Verify(body.CodeVerifier))
-            return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Unable to verify code challenge");
+                var authSession = await _mediator.Send(new SelectAuthSessionByIdQuery(authCode.Stamp), cancellationToken);
+                if (!authSession.Verify(body.CodeVerifier))
+                    return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Unable to verify code challenge");
 
-        await _mediator.Send(new DeleteAuthCodeCommand(authCode), CancellationToken.None);
-        var bearerToken = _jwtIssuer.Create(authCode.Signer, authSession.Audience);
-        return Ok(bearerToken);
+                await _mediator.Send(new DeleteAuthCodeCommand(authCode), CancellationToken.None);
+        
+                accessToken = _jwtIssuer.Create(authCode.Signer, authSession.Audience);
+
+                // invalidate old refresh tokens
+                authSuccess = await _mediator.Send(new SelectAuthSuccessByTargetQuery(authSession.Audience, authCode.Signer), cancellationToken);
+                if (authSuccess is not null)  await _mediator.Send(new DeleteAuthSuccessCommand(authSuccess), cancellationToken);
+                authSuccess = new AuthSuccess(authSession.Audience, authCode.Signer);
+                
+                break;
+            }
+            case GrantType.RefreshToken:
+                authSuccess = await _mediator.Send(new SelectAuthSuccessByRefreshTokenQuery(body.RefreshToken), cancellationToken);
+                if (authSuccess is null) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status403Forbidden, "Invalid refresh token");
+                
+                // invalidate expired or old refresh tokens
+                if (!authSuccess.Valid)
+                {
+                    await _mediator.Send(new DeleteAuthSuccessCommand(authSuccess), cancellationToken);
+                    return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status403Forbidden, "Invalid refresh token");
+                }
+                break;
+            default:
+                throw new InvalidOperationException();
+        }
+
+        var refreshToken = authSuccess.NewRefreshToken();
+        await _mediator.Send(new PersistAuthSuccessCommand(authSuccess), cancellationToken);
+
+        Response.Headers.CacheControl = "no-store";
+        Response.Headers.Pragma = "no-cache";
+        return Ok(new TokenResponseBody(accessToken, refreshToken));
     }
 
     [HttpGet("keys")]
-    public async Task<ActionResult<JsonWebKeySetResponse>> GetKeys()
+    public async Task<ActionResult<JsonWebKeySetResponseBody>> GetKeys()
     {
-        return Ok(new JsonWebKeySetResponse(await _jwtIssuer.GetPublicKeys()));
+        return Ok(new JsonWebKeySetResponseBody(await _jwtIssuer.GetPublicKeys()));
     }
 }
