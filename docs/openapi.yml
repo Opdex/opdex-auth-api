@@ -98,7 +98,7 @@ components:
         grant_type:
           type: string
           enum:
-            - code
+            - authorization_code
             - refresh_token
           description: Method of obtaining an access token
         code:
@@ -247,7 +247,7 @@ paths:
             schema:
               $ref: "#/components/schemas/accessTokenRequest"
             example:
-              grant_type: "code"
+              grant_type: "authorization_code"
               code: "b0907a58-d583-480d-a468-a58e6fc7f472"
               code_verifier: ZGZMVEU2WVQ1Mlp0NnljVHNqOVRlSTJyVmNpcjVEM04
       responses:
