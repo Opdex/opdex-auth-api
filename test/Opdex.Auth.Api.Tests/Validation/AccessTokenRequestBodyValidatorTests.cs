@@ -29,7 +29,7 @@ public class AccessTokenRequestBodyValidatorTests
     }
 
     [Theory]
-    [InlineData(GrantType.Code)]
+    [InlineData(GrantType.AuthorizationCode)]
     [InlineData(GrantType.RefreshToken)]
     public void GrantType_Valid(GrantType grantType)
     {
@@ -86,7 +86,7 @@ public class AccessTokenRequestBodyValidatorTests
     public void Code_Invalid()
     {
         // Arrange
-        var request = new TokenRequestBody { GrantType = GrantType.Code };
+        var request = new TokenRequestBody { GrantType = GrantType.AuthorizationCode };
 
         // Act
         var result = _validator.TestValidate(request);
@@ -101,7 +101,7 @@ public class AccessTokenRequestBodyValidatorTests
         // Arrange
         var request = new TokenRequestBody
         {
-            GrantType = GrantType.Code,
+            GrantType = GrantType.AuthorizationCode,
             Code = Guid.NewGuid()
         };
 
@@ -123,7 +123,7 @@ public class AccessTokenRequestBodyValidatorTests
         // Arrange
         var request = new TokenRequestBody
         {
-            GrantType = GrantType.Code,
+            GrantType = GrantType.AuthorizationCode,
             CodeVerifier = verifier
         };
 
@@ -142,7 +142,7 @@ public class AccessTokenRequestBodyValidatorTests
         // Arrange
         var request = new TokenRequestBody
         {
-            GrantType = GrantType.Code,
+            GrantType = GrantType.AuthorizationCode,
             CodeVerifier = verifier
         };
 

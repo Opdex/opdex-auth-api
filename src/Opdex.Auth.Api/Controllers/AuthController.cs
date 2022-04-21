@@ -51,7 +51,7 @@ public class AuthController : ControllerBase
         
         switch (body.GrantType)
         {
-            case GrantType.Code:
+            case GrantType.AuthorizationCode:
             {
                 var authCode = await _mediator.Send(new SelectAuthCodeByValueQuery(body.Code), cancellationToken);
                 if (authCode is null || !authCode.Expired)

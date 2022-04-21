@@ -13,7 +13,7 @@ public class AccessTokenRequestBodyValidator : AbstractValidator<TokenRequestBod
         RuleFor(request => request.GrantType).MustBeValidEnumValue()
             .WithMessage("Grant type must be code or refresh_token");
         
-        When(request => request.GrantType == GrantType.Code, () =>
+        When(request => request.GrantType == GrantType.AuthorizationCode, () =>
         {
             RuleFor(request => request.Code)
                 .NotEmpty().WithMessage("Authorization code must not be empty");
