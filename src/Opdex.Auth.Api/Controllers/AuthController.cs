@@ -53,12 +53,12 @@ public class AuthController : ControllerBase
         {
             case GrantType.AuthorizationCode:
             {
-                var authCode = await _mediator.Send(new SelectAuthCodeByValueQuery(body.Code), cancellationToken);
+                var authCode = await _mediator.Send(new SelectAuthCodeByValueQuery((Guid)body.Code!), cancellationToken);
                 if (authCode is null || !authCode.Expired)
                     return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Invalid or expired authorization code");
 
                 var authSession = await _mediator.Send(new SelectAuthSessionByIdQuery(authCode.Stamp), cancellationToken);
-                if (!authSession.Verify(body.CodeVerifier))
+                if (!authSession.Verify(body.CodeVerifier!))
                     return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Unable to verify code challenge");
 
                 await _mediator.Send(new DeleteAuthCodeCommand(authCode), CancellationToken.None);
@@ -73,7 +73,7 @@ public class AuthController : ControllerBase
                 break;
             }
             case GrantType.RefreshToken:
-                authSuccess = await _mediator.Send(new SelectAuthSuccessByRefreshTokenQuery(body.RefreshToken), cancellationToken);
+                authSuccess = await _mediator.Send(new SelectAuthSuccessByRefreshTokenQuery(body.RefreshToken!), cancellationToken);
                 if (authSuccess is null) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status403Forbidden, "Invalid refresh token");
                 
                 // invalidate expired or old refresh tokens

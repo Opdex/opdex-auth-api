@@ -4,14 +4,14 @@ using Opdex.Auth.Api.Models;
 
 namespace Opdex.Auth.Api.Validation;
 
-public class AccessTokenRequestBodyValidator : AbstractValidator<TokenRequestBody>
+public class TokenRequestBodyValidator : AbstractValidator<TokenRequestBody>
 {
-    private static readonly Regex RefreshTokenRegex = new Regex("^[a-zA-Z0-9]{24}$", RegexOptions.Compiled);
+    private static readonly Regex RefreshTokenRegex = new ("^[a-zA-Z0-9]{24}$", RegexOptions.Compiled);
     
-    public AccessTokenRequestBodyValidator()
+    public TokenRequestBodyValidator()
     {
-        RuleFor(request => request.GrantType).MustBeValidEnumValue()
-            .WithMessage("Grant type must be code or refresh_token");
+        RuleFor(request => request.GrantType)
+            .MustBeValidEnumValue().WithMessage("Grant type must be authorization_code or refresh_token");
         
         When(request => request.GrantType == GrantType.AuthorizationCode, () =>
         {

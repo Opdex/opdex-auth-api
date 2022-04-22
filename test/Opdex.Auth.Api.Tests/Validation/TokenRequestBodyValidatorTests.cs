@@ -6,13 +6,13 @@ using Xunit;
 
 namespace Opdex.Auth.Api.Tests.Validation;
 
-public class AccessTokenRequestBodyValidatorTests
+public class TokenRequestBodyValidatorTests
 {
-    private readonly AccessTokenRequestBodyValidator _validator;
+    private readonly TokenRequestBodyValidator _validator;
 
-    public AccessTokenRequestBodyValidatorTests()
+    public TokenRequestBodyValidatorTests()
     {
-        _validator = new AccessTokenRequestBodyValidator();
+        _validator = new TokenRequestBodyValidator();
     }
 
     [Fact]

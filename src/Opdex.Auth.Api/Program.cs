@@ -112,10 +112,14 @@ builder.Services.AddProblemDetails(options =>
     };
 });
 
-builder.Services.AddFluentValidation();
+builder.Services.AddFluentValidation(options => options.DisableDataAnnotationsValidation = true);
 builder.Services.AddValidatorsFromAssembly(typeof(IApiAssemblyMarker).Assembly);
-builder.Services.AddControllers(config => config.ValueProviderFactories.Add(new SnakeCaseValueProviderFactory()))
-                .AddJsonOptions(config => config.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
+builder.Services.AddControllers(config =>
+    {
+        config.ValueProviderFactories.Add(new SnakeCaseValueProviderFactory());
+        config.ModelBinderProviders.Insert(0, new SnakeCaseModelBinderProvider());
+    })
+    .AddJsonOptions(config => config.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
 builder.Services.AddProblemDetailsConventions();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
