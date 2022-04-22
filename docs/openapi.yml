@@ -93,15 +93,23 @@ components:
     accessTokenRequest:
       type: object
       required:
-        - code
-        - code_verifier
-      properties: 
+        - grant_type
+      properties:
+        grant_type:
+          type: string
+          enum:
+            - authorization_code
+            - refresh_token
+          description: Method of obtaining an access token
         code:
           type: string
           description: Authorization code issued by the server
         code_verifier:
           type: string
           description: Verifier that can be used to verify the `code_challenge`
+        refresh_token:
+          type: string
+          description: Previously supplied refresh token
     stratisSignatureAuthRequest:
       type: object
       required:
@@ -116,6 +124,18 @@ components:
           type: string
           description: Address of the message signer
           pattern: ^[a-km-zA-HJ-NP-Z1-9]+$
+    accessTokenResponse:
+      type: object
+      description: Access token response body
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: integer
+        refresh_token:
+          type: string
     jsonWebKeySetResponse:
       type: object
       description: JSON Web Key Set that can be used to validate signed JWTs
@@ -227,16 +247,21 @@ paths:
             schema:
               $ref: "#/components/schemas/accessTokenRequest"
             example:
+              grant_type: "authorization_code"
               code: "b0907a58-d583-480d-a468-a58e6fc7f472"
               code_verifier: ZGZMVEU2WVQ1Mlp0NnljVHNqOVRlSTJyVmNpcjVEM04
       responses:
         200:
           description: Access token retrieved
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
-                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ3YWxsZXQiOiJQUFFkZVhkaldEQnpWTFVqZ1d3aTRtRlA0WTFtaHVOY1J1IiwibmJmIjoxNjQzMDgxNzM5LCJleHAiOjE2NDMxNjgxMzcsImlhdCI6MTY0MzA4MTczN30.xjiwjPxzgYbQlP6ON2-Mg3S7m-dWww41FISVXhOGEFY
+                $ref: "#/components/schemas/accessTokenResponse"
+              example:
+                access_token: eyJhbGciOiJSUzI1NiIsImtpZCI6IjFmNzZmMWFkMTQ4NjQxY2RhYzY1OTA2NGRmMTMwNTY4IiwidHlwIjoiSldUIn0.eyJzdWIiOiJ0UTlSdWtac0I2YkJzZW5IbkdTbzFxNjlDSnpXR254b2htIiwid2FsbGV0IjoidFE5UnVrWnNCNmJCc2VuSG5HU28xcTY5Q0p6V0dueG9obSIsIm5iZiI6MTY1MDI5MTkzNywiZXhwIjoxNjUwMzc4MzM3LCJpYXQiOjE2NTAyOTE5MzcsImlzcyI6InRlc3QtYXV0aC1hcGkub3BkZXguY29tIiwiYXVkIjoidGVzdC1hcHAub3BkZXguY29tIn0.Dq1wPLYhzm7eTQXw_T-aF6GT-mIoVtrksXZq5W_INsj5SxJKHdeQuNs1d6l9w9MgYofEbbTaMXBr64jMQXqpUlEoUHBKf-z5YtPOvNvSJltBkVDMD-2_Y-_m8e8uTPXj8VY1K9wbs1ecjMCO0KDMDKlvc7cuzjES6DJmXaxZp-89-4mCvKbfZswgzQ2X2k6q8SwQPyWgTmrymkcwAuaSJC-_MxmLU-j8_MncWYCzSzcXygOZfiZKq_W5biUJVqj4oYQdbSI8um0Ur3g_Qzy1lUvgqR_7McSETR47ug9_Uoj1Kmglvg2bsBBxK5SjIHJbUiAY9wbBMsyMfGR2ZHRnSg
+                token_type: bearer
+                expires_in: 3600
+                refresh_token: 3XUt25gb8S7oPMqNf0ULfwrt
         400:
           description: The request is not valid
           content:

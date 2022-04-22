@@ -36,13 +36,5 @@ public class SelectAuthCodeByStampQueryHandler : IRequestHandler<SelectAuthCodeB
         return result is null ? null : new AuthCode(result.AccessCode, result.Signer, result.Stamp, result.Expiry);
     }
 
-    private sealed class SqlParams
-    {
-        internal SqlParams(Guid stamp)
-        {
-            Stamp = stamp;
-        }
-
-        public Guid Stamp { get; }
-    }
+    private sealed record SqlParams(Guid Stamp);
 }

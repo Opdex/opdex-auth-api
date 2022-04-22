@@ -37,13 +37,5 @@ public class SelectAuthSessionByConnectionIdQueryHandler : IRequestHandler<Selec
         return result is null ? null : new AuthSession(result.Id, result.Audience, result.CodeChallenge, result.CodeChallengeMethod, result.ConnectionId);
     }
 
-    private sealed class SqlParams
-    {
-        internal SqlParams(string connectionId)
-        {
-            ConnectionId = connectionId;
-        }
-
-        public string ConnectionId { get; }
-    }
+    private sealed record SqlParams(string ConnectionId);
 }
