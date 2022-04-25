@@ -10,12 +10,12 @@ public class SelectAuthSuccessByRefreshTokenQueryHandler : IRequestHandler<Selec
 {
     private static readonly string AuthSuccessQuery =
         @$"SELECT
-                as.{nameof(AuthSuccessEntity.Id)},
-                as.{nameof(AuthSuccessEntity.Audience)},
-                as.{nameof(AuthSuccessEntity.Address)},
-                as.{nameof(AuthSuccessEntity.Expiry)}
+                a.{nameof(AuthSuccessEntity.Id)},
+                a.{nameof(AuthSuccessEntity.Audience)},
+                a.{nameof(AuthSuccessEntity.Address)},
+                a.{nameof(AuthSuccessEntity.Expiry)}
             FROM auth_success as INNER JOIN token_log tl
-                ON as.{nameof(AuthSuccessEntity.Id)} = tl.{nameof(TokenLogEntity.AuthSuccessId)}
+                ON a.{nameof(AuthSuccessEntity.Id)} = tl.{nameof(TokenLogEntity.AuthSuccessId)}
             WHERE
                 tl.{nameof(TokenLogEntity.RefreshToken)} = @{nameof(SqlParams.RefreshToken)}
             LIMIT 1;".RemoveExcessWhitespace();
