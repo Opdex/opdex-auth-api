@@ -14,18 +14,18 @@ public class PersistAuthSuccessCommandHandler : IRequestHandler<PersistAuthSucce
                 {nameof(AuthSuccessEntity.Address)},
                 {nameof(AuthSuccessEntity.Expiry)}
             ) VALUES (
-                @{nameof(AuthSuccessEntity.Audience)},
-                @{nameof(AuthSuccessEntity.Address)},
-                @{nameof(AuthSuccessEntity.Expiry)}
+                @{nameof(TokenLogParams.Audience)},
+                @{nameof(TokenLogParams.Address)},
+                @{nameof(TokenLogParams.Expiry)}
             );
             INSERT INTO token_log (
                 {nameof(TokenLogEntity.RefreshToken)},
                 {nameof(TokenLogEntity.AuthSuccessId)},
                 {nameof(TokenLogEntity.CreatedAt)}
             ) VALUES (
-                @{nameof(TokenLogEntity.RefreshToken)},
+                @{nameof(TokenLogParams.RefreshToken)},
                 LAST_INSERT_ID(),
-                @{nameof(TokenLogEntity.CreatedAt)}
+                @{nameof(TokenLogParams.CreatedAt)}
             );".RemoveExcessWhitespace();
 
     private static readonly string ApplyNewTokenCommand =
@@ -34,14 +34,14 @@ public class PersistAuthSuccessCommandHandler : IRequestHandler<PersistAuthSucce
                 {nameof(TokenLogEntity.AuthSuccessId)},
                 {nameof(TokenLogEntity.CreatedAt)}
             ) VALUES (
-                @{nameof(TokenLogEntity.RefreshToken)},
-                @{nameof(TokenLogEntity.AuthSuccessId)},
-                @{nameof(TokenLogEntity.CreatedAt)}
+                @{nameof(TokenLogParams.RefreshToken)},
+                @{nameof(TokenLogParams.AuthSuccessId)},
+                @{nameof(TokenLogParams.CreatedAt)}
             );
             UPDATE auth_success
                 SET
-                    {nameof(AuthSuccessEntity.Expiry)} = @{nameof(AuthSuccessEntity.Expiry)}
-                WHERE {nameof(AuthSuccessEntity.Id)} = {nameof(TokenLogEntity.AuthSuccessId)};".RemoveExcessWhitespace();
+                    {nameof(AuthSuccessEntity.Expiry)} = @{nameof(TokenLogParams.Expiry)}
+                WHERE {nameof(AuthSuccessEntity.Id)} = @{nameof(TokenLogParams.AuthSuccessId)};".RemoveExcessWhitespace();
     
     private readonly IDbContext _dbContext;
     private readonly ILogger<PersistAuthSuccessCommandHandler> _logger;
@@ -61,7 +61,7 @@ public class PersistAuthSuccessCommandHandler : IRequestHandler<PersistAuthSucce
 
             var sql = authSuccessEntity.Id == 0 ? InsertSqlCommand : ApplyNewTokenCommand;
             
-            var command = DatabaseQuery.Create(sql, new { authSuccessEntity, tokenEntity }, CancellationToken.None);
+            var command = DatabaseQuery.Create(sql, new TokenLogParams(authSuccessEntity, tokenEntity), CancellationToken.None);
 
             var result = await _dbContext.ExecuteCommandAsync(command);
 
@@ -82,5 +82,25 @@ public class PersistAuthSuccessCommandHandler : IRequestHandler<PersistAuthSucce
 
             return false;
         }
+    }
+
+    private sealed record TokenLogParams
+    {
+        public TokenLogParams(AuthSuccessEntity authSuccessEntity, TokenLogEntity tokenLogEntity)
+        {
+            Audience = authSuccessEntity.Audience;
+            Address = authSuccessEntity.Address;
+            Expiry = authSuccessEntity.Expiry;
+            RefreshToken = tokenLogEntity.RefreshToken;
+            AuthSuccessId = tokenLogEntity.AuthSuccessId;
+            CreatedAt = tokenLogEntity.CreatedAt;
+        }
+        
+        public string Audience { get; }
+        public string Address { get; }
+        public DateTime Expiry { get; }
+        public string RefreshToken { get; }
+        public ulong AuthSuccessId { get; }
+        public DateTime CreatedAt { get; }
     }
 }
