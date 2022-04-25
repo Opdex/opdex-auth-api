@@ -82,6 +82,8 @@ public class AuthController : ControllerBase
                     await _mediator.Send(new DeleteAuthSuccessCommand(authSuccess), cancellationToken);
                     return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status403Forbidden, "Invalid refresh token");
                 }
+                
+                accessToken = _jwtIssuer.Create(authSuccess.Address, authSuccess.Audience);
                 break;
             default:
                 throw new InvalidOperationException();

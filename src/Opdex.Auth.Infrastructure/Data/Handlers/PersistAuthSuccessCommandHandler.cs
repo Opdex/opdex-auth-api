@@ -57,9 +57,9 @@ public class PersistAuthSuccessCommandHandler : IRequestHandler<PersistAuthSucce
         try
         {
             var authSuccessEntity = new AuthSuccessEntity(request.AuthSuccess);
-            var tokenEntity = new TokenLogEntity(authSuccessEntity.Id, request.AuthSuccess.Tokens.Peek());
+            var tokenEntity = new TokenLogEntity(request.AuthSuccess.Tokens.Peek());
 
-            var sql = authSuccessEntity.Id == 0 ? InsertSqlCommand : ApplyNewTokenCommand;
+            var sql = request.AuthSuccess.Id == 0 ? InsertSqlCommand : ApplyNewTokenCommand;
             
             var command = DatabaseQuery.Create(sql, new TokenLogParams(authSuccessEntity, tokenEntity), CancellationToken.None);
 

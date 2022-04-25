@@ -14,25 +14,20 @@ public class SelectAuthSuccessByRefreshTokenQueryHandler : IRequestHandler<Selec
                 a.{nameof(AuthSuccessEntity.Audience)},
                 a.{nameof(AuthSuccessEntity.Address)},
                 a.{nameof(AuthSuccessEntity.Expiry)}
-            FROM auth_success as INNER JOIN token_log tl
+            FROM auth_success a INNER JOIN token_log tl
                 ON a.{nameof(AuthSuccessEntity.Id)} = tl.{nameof(TokenLogEntity.AuthSuccessId)}
             WHERE
                 tl.{nameof(TokenLogEntity.RefreshToken)} = @{nameof(SqlParams.RefreshToken)}
             LIMIT 1;".RemoveExcessWhitespace();
     
-    private static readonly string IsLatestRefreshTokenLogQuery =
-        @$"SELECT {nameof(TokenLogEntity.RefreshToken)} = @{nameof(SqlParams.RefreshToken)} FROM token_log
-            WHERE {nameof(TokenLogEntity.AuthSuccessId)} = (
-                SELECT {nameof(TokenLogEntity.AuthSuccessId)} FROM token_log
-                WHERE {nameof(TokenLogEntity.RefreshToken)} = @{nameof(SqlParams.RefreshToken)}
-            )
-            AND {nameof(TokenLogEntity.CreatedAt)} = (
-                SELECT MAX({nameof(TokenLogEntity.CreatedAt)}) FROM token_log
-                WHERE {nameof(TokenLogEntity.AuthSuccessId)} = (
-                    SELECT {nameof(TokenLogEntity.AuthSuccessId)} FROM token_log
-                    WHERE {nameof(TokenLogEntity.RefreshToken)} = @{nameof(SqlParams.RefreshToken)}
-                )
-            );".RemoveExcessWhitespace();
+    private static readonly string LatestRefreshTokenQuery =
+        @$"SELECT
+                {nameof(TokenLogEntity.RefreshToken)},
+                {nameof(TokenLogEntity.AuthSuccessId)},
+                {nameof(TokenLogEntity.CreatedAt)}
+            FROM token_log
+            ORDER BY {nameof(TokenLogEntity.CreatedAt)} DESC
+            LIMIT 1;".RemoveExcessWhitespace();
     
     private readonly IDbContext _dbContext;
 
@@ -49,11 +44,12 @@ public class SelectAuthSuccessByRefreshTokenQueryHandler : IRequestHandler<Selec
         var authSuccessResult = await _dbContext.ExecuteFindAsync<AuthSuccessEntity?>(authSuccessQuery);
         if (authSuccessResult is null) return null;
 
-        var isLatestRefreshTokenQuery = DatabaseQuery.Create(IsLatestRefreshTokenLogQuery, sqlParams, cancellationToken);
-        var isLatestRefreshToken = await _dbContext.ExecuteScalarAsync<bool>(isLatestRefreshTokenQuery);
+        var latestTokenLogQuery = DatabaseQuery.Create(LatestRefreshTokenQuery, cancellationToken);
+        var latestTokenLog = await _dbContext.ExecuteFindAsync<TokenLogEntity>(latestTokenLogQuery);
+        var isLatestRefreshToken = latestTokenLog.RefreshToken == request.RefreshToken;
 
-        return new AuthSuccess(authSuccessResult.Audience, authSuccessResult.Address, authSuccessResult.Expiry,
-                         Enumerable.Empty<TokenLog>(), !isLatestRefreshToken);
+        return new AuthSuccess(authSuccessResult.Id, authSuccessResult.Audience, authSuccessResult.Address, authSuccessResult.Expiry,
+                         new []{ new TokenLog(latestTokenLog.RefreshToken, latestTokenLog.AuthSuccessId, latestTokenLog.CreatedAt) }, !isLatestRefreshToken);
     }
     
     private sealed record SqlParams(string RefreshToken);

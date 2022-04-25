@@ -38,7 +38,8 @@ public class SelectAuthSuccessByTargetQueryHandler : IRequestHandler<SelectAuthS
     
     public async Task<AuthSuccess?> Handle(SelectAuthSuccessByTargetQuery request, CancellationToken cancellationToken)
     {
-        var authSuccessQuery = DatabaseQuery.Create(AuthSuccessQuery, new AuthSuccessQuerySqlParams(request.Audience, request.Signer), cancellationToken);
+        var (audience, signer) = request;
+        var authSuccessQuery = DatabaseQuery.Create(AuthSuccessQuery, new AuthSuccessQuerySqlParams(audience, signer), cancellationToken);
 
         var result = await _dbContext.ExecuteFindAsync<AuthSuccessEntity?>(authSuccessQuery);
 
@@ -46,7 +47,7 @@ public class SelectAuthSuccessByTargetQueryHandler : IRequestHandler<SelectAuthS
 
         var tokenQuery = DatabaseQuery.Create(TokenLogQuery, new TokenLogQuerySqlParams(result.Id), cancellationToken);
         var tokenLogs = await _dbContext.ExecuteQueryAsync<TokenLogEntity>(tokenQuery);
-        return new AuthSuccess(result.Audience, result.Address, result.Expiry, tokenLogs.Select(t => new TokenLog(t.RefreshToken, t.CreatedAt)));
+        return new AuthSuccess(result.Id, result.Audience, result.Address, result.Expiry, tokenLogs.Select(t => new TokenLog(t.RefreshToken, t.AuthSuccessId, t.CreatedAt)));
     }
 
     private sealed record AuthSuccessQuerySqlParams(string Audience, string Address);

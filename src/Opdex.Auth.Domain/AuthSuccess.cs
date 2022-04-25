@@ -13,15 +13,17 @@ public class AuthSuccess
         Tokens = new Stack<TokenLog>();
     }
 
-    public AuthSuccess(string audience, string address, DateTime expiry, IEnumerable<TokenLog> tokens, bool invalidate = false)
+    public AuthSuccess(ulong id, string audience, string address, DateTime expiry, IEnumerable<TokenLog> tokens, bool invalidate = false)
     {
+        Id = id;
         Audience = audience;
         Address = address;
         Expiry = expiry;
-        Valid = !invalidate || expiry > DateTime.UtcNow;
+        Valid = !invalidate && expiry > DateTime.UtcNow;
         Tokens = new Stack<TokenLog>(tokens);
     }
     
+    public ulong Id { get; }
     public string Audience { get; }
     public string Address { get; }
     public DateTime Expiry { get; }
@@ -32,7 +34,7 @@ public class AuthSuccess
     public string NewRefreshToken()
     {
         var refreshToken = KeyGenerator.Random(24);
-        Tokens.Push(new TokenLog(refreshToken, DateTime.UtcNow));
+        Tokens.Push(new TokenLog(refreshToken, Id, DateTime.UtcNow));
         return refreshToken;
     }
 }

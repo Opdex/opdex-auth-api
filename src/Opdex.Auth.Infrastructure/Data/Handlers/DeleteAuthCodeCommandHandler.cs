@@ -24,8 +24,7 @@ public class DeleteAuthCodeCommandHandler : AsyncRequestHandler<DeleteAuthCodeCo
 
     protected override async Task Handle(DeleteAuthCodeCommand request, CancellationToken cancellationToken)
     {
-        var sqlParams = new SqlParams(request.AuthCode.Value);
-        var command = DatabaseQuery.Create(SqlCommand, sqlParams, CancellationToken.None);
+        var command = DatabaseQuery.Create(SqlCommand, new AuthCodeEntity(request.AuthCode), CancellationToken.None);
         
         try
         {
@@ -42,15 +41,5 @@ public class DeleteAuthCodeCommandHandler : AsyncRequestHandler<DeleteAuthCodeCo
                 _logger.LogError(ex, $"Failure deleting auth code");
             }
         }
-    }
-
-    private sealed class SqlParams
-    {
-        internal SqlParams(Guid accessCode)
-        {
-            AccessCode = accessCode;
-        }
-
-        public Guid AccessCode { get; }
     }
 }

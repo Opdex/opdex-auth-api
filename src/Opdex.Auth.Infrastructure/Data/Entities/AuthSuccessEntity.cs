@@ -12,6 +12,7 @@ public class AuthSuccessEntity
     internal AuthSuccessEntity(AuthSuccess authSuccess)
     {
         Guard.Against.Null(authSuccess, nameof(authSuccess));
+        Id = authSuccess.Id;
         Audience = authSuccess.Audience;
         Address = authSuccess.Address;
         Expiry = authSuccess.Expiry;

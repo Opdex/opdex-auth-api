@@ -8,12 +8,11 @@ public class TokenLogEntity
     {
     }
     
-    public TokenLogEntity(ulong authSuccessId, TokenLog tokenLog)
+    public TokenLogEntity(TokenLog tokenLog)
     {
-        AuthSuccessId = authSuccessId;
-        var (refreshToken, createdAt) = tokenLog;
-        RefreshToken = refreshToken;
-        CreatedAt = createdAt;
+        RefreshToken = tokenLog.RefreshToken;
+        AuthSuccessId = tokenLog.AuthSuccessId;
+        CreatedAt = tokenLog.CreatedAt;
     }
 
     public string RefreshToken { get; set; }
