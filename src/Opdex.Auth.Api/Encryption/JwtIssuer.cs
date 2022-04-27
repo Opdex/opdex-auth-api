@@ -15,8 +15,8 @@ namespace Opdex.Auth.Api.Encryption;
 
 public class JwtIssuer : IJwtIssuer
 {
-    public static readonly TimeSpan TokenLifetime = TimeSpan.FromHours(1);
-    
+    public static readonly TimeSpan TokenLifetime = TimeSpan.FromMinutes(5);
+
     private readonly string _keyId;
     private readonly string _keyIdHeaderValue;
     private readonly IOptionsSnapshot<ApiOptions> _apiOptions;
