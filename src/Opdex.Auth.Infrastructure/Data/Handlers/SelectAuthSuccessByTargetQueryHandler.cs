@@ -23,7 +23,7 @@ public class SelectAuthSuccessByTargetQueryHandler : IRequestHandler<SelectAuthS
     private static readonly string TokenLogQuery =
         @$"SELECT
                 {nameof(TokenLogEntity.RefreshToken)},
-                {nameof(TokenLogEntity.CreatedAt)},
+                {nameof(TokenLogEntity.CreatedAt)}
             FROM token_log
             WHERE
                 {nameof(TokenLogEntity.AuthSuccessId)} = @{nameof(TokenLogQuerySqlParams.AuthSuccessId)}
