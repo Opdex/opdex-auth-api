@@ -72,6 +72,7 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 
 builder.Services.AddScoped<ITwoWayEncryptionProvider, AesCbcProvider>();
 builder.Services.AddScoped<IJwtIssuer, JwtIssuer>();
+builder.Services.AddScoped<StratisIdGenerator>();
 builder.Services.AddScoped<StratisIdValidator>();
 builder.Services.AddSignalR(o => { o.EnableDetailedErrors = true; }).AddAzureSignalR();
 builder.Services.AddApiVersioning(options =>

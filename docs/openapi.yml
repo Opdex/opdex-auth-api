@@ -13,10 +13,10 @@ servers:
   - url: https://test-auth-api.opdex.com/v1
   - url: https://auth-api.opdex.com/v1
 tags:
-  - name: Authentication
+  - name: OAuth
     description: Authenticate a user with Opdex
   - name: SSAS
-    description: Integrate a wallet with SSAS
+    description: Integrate a wallet using SSAS
   - name: Status
     description: View health and API status
 components: 
@@ -176,7 +176,7 @@ paths:
   /auth/authorize:
     get:
       tags:
-        - Authentication
+        - OAuth
       summary: Obtain Authorization Grant
       description: >
         Supports a PKCE authorization code grant type flow. A client should redirect the user-agent to this endpoint, which will take the user to the authorization prompt. If the user authenticates successfully, the user-agent will then be redirected to the `redirect_uri`. An authorization code will be included in the query string, along with the state parameter, if initially provided.
@@ -234,7 +234,7 @@ paths:
   /auth/token:
     post:
       tags:
-        - Authentication
+        - OAuth
       summary: Retrieve Access Token
       description: >
         Retrieves an access token that is signed by the server. The access token contains the users wallet address in the payload, as well as additional data which allows it to be validated.
@@ -283,7 +283,7 @@ paths:
   /auth/jwks:
     get:
       tags:
-        - Authentication
+        - OAuth
       summary: Get JSON Web Key Set
       description: >
         Retrieves public keys that can used to verify tokens returned by the server.
@@ -307,13 +307,34 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         500:
           $ref: "#/components/responses/InternalServerError"
+  /ssas:
+    get:
+      tags:
+        - SSAS
+      summary: Get Stratis Id
+      description: >
+        Returns a new Stratis Id to sign and authenticate. Intended for API or bot integration.
+        See the [specification](https://github.com/Opdex/SSAS) for further detail.
+      operationId: getStratisId
+      responses:
+        200:
+          description: Stratis Id was created
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: sid:test-app.opdex.com/v1/auth?uid=nd0ZT7yrMpLPa207v1uGk0uu9NNcKILgn0HLJXpLQxGKuI9RKnugLdZPz_05a2tX-rCuN0tHM6z3_Qs1yi0Lyg&exp=1643082000
+        429:
+          $ref: "#/components/responses/TooManyRequests"
+        500:
+          $ref: "#/components/responses/InternalServerError"
   /ssas/callback:
     post:
       tags:
         - SSAS
       summary: Stratis Signature Auth Callback
       description: >
-        Responds to a request from a Stratis Signature Auth signer's wallet. See the [specification](https://github.com/Opdex/SSAS) for further detail. By implementing this callback, your wallet software can be used to connect with any dApp that integrates with SSAS or the Opdex Auth API.
+        Responds to a request from a Stratis Signature Auth signer's wallet. Intended for wallet integration. See the [specification](https://github.com/Opdex/SSAS) for further detail. By implementing this callback, your wallet software can be used to connect with any dApp that integrates with SSAS or the Opdex Auth API.
       operationId: authenticateCallback
       parameters:
         - name: uid
