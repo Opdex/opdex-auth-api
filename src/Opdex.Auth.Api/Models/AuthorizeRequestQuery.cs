@@ -4,9 +4,11 @@ namespace Opdex.Auth.Api.Models;
 
 public class AuthorizeRequestQuery
 {
-    public string RedirectUri { get; set; }
+    public ResponseType ResponseType { get; set; }
     
-    public string CodeChallenge { get; set; }
+    public string? RedirectUri { get; set; }
+    
+    public string? CodeChallenge { get; set; }
 
     public CodeChallengeMethod CodeChallengeMethod { get; set; } = CodeChallengeMethod.Plain;
 

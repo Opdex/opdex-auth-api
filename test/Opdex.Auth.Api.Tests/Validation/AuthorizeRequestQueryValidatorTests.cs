@@ -15,6 +15,38 @@ public class AuthorizeRequestQueryValidatorTests
         _validator = new AuthorizeRequestQueryValidator();
     }
 
+    [Fact]
+    public void ResponseType_Invalid()
+    {
+        var request = new AuthorizeRequestQuery
+        {
+            ResponseType = default,
+        };
+
+        // Act
+        var result = _validator.TestValidate(request);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(r => r.ResponseType);
+    }
+
+    [InlineData(ResponseType.Code)]
+    [InlineData(ResponseType.Sid)]
+    [Theory]
+    public void ResponseType_Valid(ResponseType responseType)
+    {
+        var request = new AuthorizeRequestQuery
+        {
+            ResponseType = responseType,
+        };
+
+        // Act
+        var result = _validator.TestValidate(request);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(r => r.ResponseType);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -27,6 +59,7 @@ public class AuthorizeRequestQueryValidatorTests
         // Arrange
         var request = new AuthorizeRequestQuery
         {
+            ResponseType = ResponseType.Code,
             RedirectUri = redirectUri
         };
 
@@ -43,6 +76,7 @@ public class AuthorizeRequestQueryValidatorTests
         // Arrange
         var request = new AuthorizeRequestQuery
         {
+            ResponseType = ResponseType.Code,
             RedirectUri = "https://app.opdex.com:1111/success?abc=xyz"
         };
 
@@ -62,6 +96,7 @@ public class AuthorizeRequestQueryValidatorTests
         // Arrange
         var request = new AuthorizeRequestQuery
         {
+            ResponseType = ResponseType.Code,
             CodeChallenge = challenge
         };
 
@@ -80,6 +115,7 @@ public class AuthorizeRequestQueryValidatorTests
         // Arrange
         var request = new AuthorizeRequestQuery
         {
+            ResponseType = ResponseType.Code,
             CodeChallenge = challenge,
             CodeChallengeMethod = CodeChallengeMethod.Plain
         };
@@ -99,6 +135,7 @@ public class AuthorizeRequestQueryValidatorTests
         // Arrange
         var request = new AuthorizeRequestQuery
         {
+            ResponseType = ResponseType.Code,
             CodeChallenge = challenge,
             CodeChallengeMethod = CodeChallengeMethod.Plain
         };
@@ -118,6 +155,7 @@ public class AuthorizeRequestQueryValidatorTests
         // Arrange
         var request = new AuthorizeRequestQuery
         {
+            ResponseType = ResponseType.Code,
             CodeChallenge = challenge,
             CodeChallengeMethod = CodeChallengeMethod.S256
         };
@@ -137,6 +175,7 @@ public class AuthorizeRequestQueryValidatorTests
         // Arrange
         var request = new AuthorizeRequestQuery
         {
+            ResponseType = ResponseType.Code,
             CodeChallenge = challenge,
             CodeChallengeMethod = CodeChallengeMethod.S256
         };
@@ -154,6 +193,7 @@ public class AuthorizeRequestQueryValidatorTests
         // Arrange
         var request = new AuthorizeRequestQuery
         {
+            ResponseType = ResponseType.Code,
             CodeChallengeMethod = (CodeChallengeMethod)255
         };
 
@@ -172,6 +212,7 @@ public class AuthorizeRequestQueryValidatorTests
         // Arrange
         var request = new AuthorizeRequestQuery
         {
+            ResponseType = ResponseType.Code,
             CodeChallengeMethod = method
         };
 
@@ -188,6 +229,7 @@ public class AuthorizeRequestQueryValidatorTests
         // Arrange
         var request = new AuthorizeRequestQuery
         {
+            ResponseType = ResponseType.Code,
             State = "£" // non ascii
         };
 
@@ -208,6 +250,7 @@ public class AuthorizeRequestQueryValidatorTests
         // Arrange
         var request = new AuthorizeRequestQuery
         {
+            ResponseType = ResponseType.Code,
             State = state
         };
 

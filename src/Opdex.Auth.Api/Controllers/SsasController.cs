@@ -19,22 +19,16 @@ namespace Opdex.Auth.Api.Controllers;
 [ApiVersion("1")]
 public class SsasController : ControllerBase
 {
-    private readonly StratisIdGenerator _stratisIdGenerator;
     private readonly IMediator _mediator;
     private readonly StratisIdValidator _stratisIdValidator;
     private readonly IOptionsSnapshot<ApiOptions> _apiOptions;
 
-    public SsasController(IMediator mediator, StratisIdGenerator stratisIdGenerator,
-                          StratisIdValidator stratisIdValidator, IOptionsSnapshot<ApiOptions> apiOptions)
+    public SsasController(IMediator mediator, StratisIdValidator stratisIdValidator, IOptionsSnapshot<ApiOptions> apiOptions)
     {
         _mediator = Guard.Against.Null(mediator);
-        _stratisIdGenerator = Guard.Against.Null(stratisIdGenerator);
         _stratisIdValidator = Guard.Against.Null(stratisIdValidator);
         _apiOptions = Guard.Against.Null(apiOptions);
     }
-    
-    [HttpGet]
-    public IActionResult GetStratisId() => Ok(_stratisIdGenerator.Create("v1/ssas", Guid.NewGuid().ToString()).ToString());
 
     [HttpPost]
     [Route("callback")]

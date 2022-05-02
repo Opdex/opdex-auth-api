@@ -4,7 +4,7 @@ using FluentValidation.Validators;
 
 namespace Opdex.Auth.Api.Validation;
 
-public class NetworkAddressValidator<T> : PropertyValidator<T, string>, INetworkAddressValidator
+public class NetworkAddressValidator<T> : PropertyValidator<T, string?>, INetworkAddressValidator
 {
     private readonly Regex _addressRegex = new("^[a-km-zA-HJ-NP-Z1-9]+$", RegexOptions.Compiled);
     
@@ -26,7 +26,7 @@ public static class NetworkAddressValidatorExtensions
     /// <summary>
     /// Validates the value is a network address.
     /// </summary>
-    public static IRuleBuilderOptions<T, string> MustBeNetworkAddress<T>(this IRuleBuilder<T, string> ruleBuilder)
+    public static IRuleBuilderOptions<T, string?> MustBeNetworkAddress<T>(this IRuleBuilder<T, string?> ruleBuilder)
     {
         return ruleBuilder.SetValidator(new NetworkAddressValidator<T>());
     }

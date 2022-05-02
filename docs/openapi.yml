@@ -99,6 +99,7 @@ components:
           type: string
           enum:
             - authorization_code
+            - sid
             - refresh_token
           description: Method of obtaining an access token
         code:
@@ -107,6 +108,15 @@ components:
         code_verifier:
           type: string
           description: Verifier that can be used to verify the `code_challenge`
+        sid:
+          type: string
+          description: Stratis ID previously obtained
+        public_key:
+          type: string
+          description: Address used to sign the Stratis ID
+        signature:
+          type: string
+          description: Signed Stratis ID
         refresh_token:
           type: string
           description: Previously supplied refresh token
@@ -179,22 +189,33 @@ paths:
         - OAuth
       summary: Obtain Authorization Grant
       description: >
-        Supports a PKCE authorization code grant type flow. A client should redirect the user-agent to this endpoint, which will take the user to the authorization prompt. If the user authenticates successfully, the user-agent will then be redirected to the `redirect_uri`. An authorization code will be included in the query string, along with the state parameter, if initially provided.
+        Supports a PKCE authorization code grant type flow for user auth, or a custom SID flow for machine-machine auth.
+        Using the _code_ response type, a client should redirect the user-agent to this endpoint, which will take the user to the authorization prompt. If the user authenticates successfully, the user-agent will then be redirected to the `redirect_uri`. An authorization code will be included in the query string, along with the state parameter, if initially provided.
+        For the sid response type, a string will be returned which should be processed with respect to 
       operationId: authorize
       parameters:
+        - in: query
+          name: response_type
+          schema:
+            type: string
+            enum:
+              - code
+              - sid
+            default: code
+          description: Determines the grant type that is requested
+          required: true
+          example: code
         - in: query
           name: redirect_uri
           schema:
             type: string
           description: Upon successful authentication, the user-agent will be redirected to this URI. This must be an absolute URI and may include additional query parameters. The authorization code will be included as part of the query string with the parameter name `code`.
-          required: true
           example: https://app.example.com/success
         - in: query
           name: code_challenge
           schema:
             type: string
           description: A client should generate a pseudorandom URL-safe 43 character `code_verifier`. This can be done by generating a random 32-octect sequence, then base64url encoding the result. The `code_challenge_method` transformation should then be applied to the `code_verifier`, to create the `code_challenge`.
-          required: true
           example: Qjk1QjRFMDQ3MzY0OEZDNjg5RTU4RTZCNzY3RTc1OEQ3QjczMUYwODBCNUUwOEExOTkwMTY0N0Y2MzA5OUZBQw
         - in: query
           name: code_challenge_method
@@ -209,7 +230,6 @@ paths:
               * **S256:** code_challenge = BASE64URL-ENCODE(SHA256(ASCII(code_verifier)))
             
             Usage of S256 is a _MUST_ when the client is capable, for improved security.
-          required: true
           example: S256
         - in: query
           name: state
@@ -217,9 +237,15 @@ paths:
             type: string
           description: >
             A non-guessable string that is unique to the user session. This is optional, however it is strongly recommended, as this will help mitigate CSRF attacks.
-          required: false
           example: Nh5BBV5Yht
       responses:
+        200:
+          description: Stratis Id was created
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: sid:test-app.opdex.com/v1/auth?uid=nd0ZT7yrMpLPa207v1uGk0uu9NNcKILgn0HLJXpLQxGKuI9RKnugLdZPz_05a2tX-rCuN0tHM6z3_Qs1yi0Lyg&exp=1643082000
         302:
           description: User-Agent redirected to the authorization prompt
           headers:
@@ -303,27 +329,6 @@ paths:
                     kid: e2ba0368610e4c69974c3177ea52f9f5
                     kty: RSA
                     use: sig                  
-        429:
-          $ref: "#/components/responses/TooManyRequests"
-        500:
-          $ref: "#/components/responses/InternalServerError"
-  /ssas:
-    get:
-      tags:
-        - SSAS
-      summary: Get Stratis Id
-      description: >
-        Returns a new Stratis Id to sign and authenticate. Intended for API or bot integration.
-        See the [specification](https://github.com/Opdex/SSAS) for further detail.
-      operationId: getStratisId
-      responses:
-        200:
-          description: Stratis Id was created
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: sid:test-app.opdex.com/v1/auth?uid=nd0ZT7yrMpLPa207v1uGk0uu9NNcKILgn0HLJXpLQxGKuI9RKnugLdZPz_05a2tX-rCuN0tHM6z3_Qs1yi0Lyg&exp=1643082000
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:

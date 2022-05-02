@@ -5,27 +5,27 @@ namespace Opdex.Auth.Domain;
 
 public class AuthSuccess
 {
-    public AuthSuccess(string audience, string address)
+    public AuthSuccess(string address, string? audience = null)
     {
-        Audience = Guard.Against.NullOrWhiteSpace(audience, nameof(audience));
         Address = Guard.Against.NullOrWhiteSpace(address, nameof(address));
+        Audience = audience;
         Expiry = DateTime.UtcNow.AddDays(30);
         Tokens = new Stack<TokenLog>();
     }
 
-    public AuthSuccess(ulong id, string audience, string address, DateTime expiry, IEnumerable<TokenLog> tokens, bool invalidate = false)
+    public AuthSuccess(ulong id, string address, string? audience, DateTime expiry, IEnumerable<TokenLog> tokens, bool invalidate = false)
     {
         Id = id;
-        Audience = audience;
         Address = address;
+        Audience = string.IsNullOrEmpty(audience) ? null : audience;
         Expiry = expiry;
         Valid = !invalidate && expiry > DateTime.UtcNow;
         Tokens = new Stack<TokenLog>(tokens);
     }
     
     public ulong Id { get; }
-    public string Audience { get; }
     public string Address { get; }
+    public string? Audience { get; }
     public DateTime Expiry { get; }
     public bool Valid { get; }
 

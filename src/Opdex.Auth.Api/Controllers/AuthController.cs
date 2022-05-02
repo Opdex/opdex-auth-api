@@ -2,6 +2,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
+using FluentValidation;
+using FluentValidation.Results;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,27 +22,47 @@ namespace Opdex.Auth.Api.Controllers;
 [SnakeCaseJsonSerializationFilter]
 public class AuthController : ControllerBase
 {
-    private readonly IOptionsSnapshot<PromptOptions> _promptOptions;
     private readonly IMediator _mediator;
     private readonly IJwtIssuer _jwtIssuer;
+    private readonly IOptionsSnapshot<PromptOptions> _promptOptions;
+    private readonly IOptionsSnapshot<ApiOptions> _apiOptions;
+    private readonly IStratisIdGenerator _stratisIdGenerator;
+    private readonly StratisIdValidator _stratisIdValidator;
 
-    public AuthController(IMediator mediator, IJwtIssuer jwtIssuer, IOptionsSnapshot<PromptOptions> promptOptions)
+    public AuthController(IMediator mediator, IJwtIssuer jwtIssuer,
+                          IOptionsSnapshot<ApiOptions> apiOptions, IOptionsSnapshot<PromptOptions> promptOptions,
+                          IStratisIdGenerator stratisIdGenerator, StratisIdValidator stratisIdValidator)
     {
-        _promptOptions = Guard.Against.Null(promptOptions, nameof(promptOptions));
         _mediator = Guard.Against.Null(mediator, nameof(mediator));
         _jwtIssuer = Guard.Against.Null(jwtIssuer, nameof(jwtIssuer));
+        _apiOptions = Guard.Against.Null(apiOptions, nameof(apiOptions));
+        _promptOptions = Guard.Against.Null(promptOptions, nameof(promptOptions));
+        _stratisIdGenerator = Guard.Against.Null(stratisIdGenerator, nameof(stratisIdGenerator));
+        _stratisIdValidator = Guard.Against.Null(stratisIdValidator, nameof(stratisIdValidator));
     }
 
     [HttpGet("authorize")]
     public async Task<IActionResult> Authorize([FromQuery] AuthorizeRequestQuery query, CancellationToken cancellationToken)
     {
-        var session = new AuthSession(new Uri(query.RedirectUri), query.CodeChallenge, query.CodeChallengeMethod);
-        var authSessionCreated = await _mediator.Send(new PersistAuthSessionCommand(session), cancellationToken);
-        if (!authSessionCreated) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status500InternalServerError);
+        switch (query.ResponseType)
+        {
+            case ResponseType.Code:
+                var session = new AuthSession(new Uri(query.RedirectUri!), query.CodeChallenge!, query.CodeChallengeMethod);
+                var authSessionCreated = await _mediator.Send(new PersistAuthSessionCommand(session), cancellationToken);
+                if (!authSessionCreated) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status500InternalServerError);
 
-        var authPromptUri = $"{_promptOptions.Value.Prompt}?redirect_uri={query.RedirectUri}&stamp={session.Stamp}";
-        if (query.State is not null) authPromptUri += $"&state={query.State}";
-        return Redirect(authPromptUri);
+                var authPromptUri = $"{_promptOptions.Value.Prompt}?redirect_uri={query.RedirectUri}&stamp={session.Stamp}";
+                if (query.State is not null) authPromptUri += $"&state={query.State}";
+                return Redirect(authPromptUri);
+            case ResponseType.Sid:
+                return Ok(_stratisIdGenerator.Create("v1/auth/token", Guid.NewGuid().ToString()).ToUriString());
+            default:
+                // should already have been validated by fluent validation
+                throw new ValidationException(new[]
+                {
+                    new ValidationFailure(nameof(query.ResponseType), "Invalid response type")
+                });
+        }
     }
 
     [HttpPost("token")]
@@ -58,7 +80,7 @@ public class AuthController : ControllerBase
                     return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Invalid or expired authorization code");
 
                 var authSession = await _mediator.Send(new SelectAuthSessionByIdQuery(authCode.Stamp), cancellationToken);
-                if (!authSession.Verify(body.CodeVerifier!))
+                if (!authSession!.Verify(body.CodeVerifier!))
                     return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Unable to verify code challenge");
 
                 await _mediator.Send(new DeleteAuthCodeCommand(authCode), CancellationToken.None);
@@ -66,12 +88,24 @@ public class AuthController : ControllerBase
                 accessToken = _jwtIssuer.Create(authCode.Signer, authSession.Audience);
 
                 // invalidate old refresh tokens
-                authSuccess = await _mediator.Send(new SelectAuthSuccessByTargetQuery(authSession.Audience, authCode.Signer), cancellationToken);
+                authSuccess = await _mediator.Send(new SelectAuthSuccessByTargetQuery(authCode.Signer, authSession.Audience), cancellationToken);
                 if (authSuccess is not null)  await _mediator.Send(new DeleteAuthSuccessCommand(authSuccess), cancellationToken);
-                authSuccess = new AuthSuccess(authSession.Audience, authCode.Signer);
+                authSuccess = new AuthSuccess(authCode.Signer, authSession.Audience);
                 
                 break;
             }
+            case GrantType.Sid:
+                var callbackUri = $"{_apiOptions.Value.Authority}{Request.Path}";
+                var result = await _stratisIdValidator.RetrieveConnectionId(callbackUri, body.Sid!.Uid, body.Sid!.Expiry, body.PublicKey!, body.Signature!, cancellationToken);
+                if (result.IsFailed) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, result.Errors[0].Message);
+                
+                accessToken = _jwtIssuer.Create(body.PublicKey!);
+                
+                // invalidate old refresh tokens
+                authSuccess = await _mediator.Send(new SelectAuthSuccessByTargetQuery(body.PublicKey!), cancellationToken);
+                if (authSuccess is not null)  await _mediator.Send(new DeleteAuthSuccessCommand(authSuccess), cancellationToken);
+                authSuccess = new AuthSuccess(body.PublicKey!);
+                break;
             case GrantType.RefreshToken:
                 authSuccess = await _mediator.Send(new SelectAuthSuccessByRefreshTokenQuery(body.RefreshToken!), cancellationToken);
                 if (authSuccess is null) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status403Forbidden, "Invalid refresh token");
@@ -83,10 +117,14 @@ public class AuthController : ControllerBase
                     return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status403Forbidden, "Invalid refresh token");
                 }
                 
-                accessToken = _jwtIssuer.Create(authSuccess.Address, authSuccess.Audience);
+                accessToken = _jwtIssuer.Create(authSuccess.Address, authSuccess.Audience!);
                 break;
             default:
-                throw new InvalidOperationException();
+                // should already have been validated by fluent validation
+                throw new ValidationException(new[]
+                {
+                    new ValidationFailure(nameof(body.GrantType), "Invalid grant type")
+                });
         }
 
         var refreshToken = authSuccess.NewRefreshToken();

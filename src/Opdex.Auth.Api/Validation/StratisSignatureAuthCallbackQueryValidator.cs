@@ -8,8 +8,8 @@ public class StratisSignatureAuthCallbackQueryValidator : AbstractValidator<Stra
     public StratisSignatureAuthCallbackQueryValidator()
     {
         RuleFor(request => request.Uid)
-            .NotEmpty().WithMessage("Unique identifier must not be empty.");
+            .NotEmpty().WithMessage("Unique identifier must not be empty");
         RuleFor(request => request.Exp)
-            .MustBeUnixTimestamp().WithMessage("Expiration date must be a unix timestamp.");
+            .MustBeUnixTimestamp().WithMessage("Expiration date must be a unix timestamp");
     }
 }
