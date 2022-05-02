@@ -17,7 +17,7 @@ public class SelectAuthSuccessByRefreshTokenQueryHandler : IRequestHandler<Selec
             FROM auth_success a INNER JOIN token_log tl
                 ON a.{nameof(AuthSuccessEntity.Id)} = tl.{nameof(TokenLogEntity.AuthSuccessId)}
             WHERE
-                tl.{nameof(TokenLogEntity.RefreshToken)} = @{nameof(SqlParams.RefreshToken)}
+                tl.{nameof(TokenLogEntity.RefreshToken)} = @{nameof(AuthSuccessSqlParams.RefreshToken)}
             LIMIT 1;".RemoveExcessWhitespace();
     
     private static readonly string LatestRefreshTokenQuery =
@@ -26,6 +26,7 @@ public class SelectAuthSuccessByRefreshTokenQueryHandler : IRequestHandler<Selec
                 {nameof(TokenLogEntity.AuthSuccessId)},
                 {nameof(TokenLogEntity.CreatedAt)}
             FROM token_log
+            WHERE {nameof(TokenLogEntity.AuthSuccessId)} = @{nameof(LatestTokenLogSqlParams.AuthSuccessId)}
             ORDER BY {nameof(TokenLogEntity.CreatedAt)} DESC
             LIMIT 1;".RemoveExcessWhitespace();
     
@@ -38,13 +39,11 @@ public class SelectAuthSuccessByRefreshTokenQueryHandler : IRequestHandler<Selec
     
     public async Task<AuthSuccess?> Handle(SelectAuthSuccessByRefreshTokenQuery request, CancellationToken cancellationToken)
     {
-        var sqlParams = new SqlParams(request.RefreshToken);
-        
-        var authSuccessQuery = DatabaseQuery.Create(AuthSuccessQuery, sqlParams, cancellationToken);
+        var authSuccessQuery = DatabaseQuery.Create(AuthSuccessQuery, new AuthSuccessSqlParams(request.RefreshToken), cancellationToken);
         var authSuccessResult = await _dbContext.ExecuteFindAsync<AuthSuccessEntity?>(authSuccessQuery);
         if (authSuccessResult is null) return null;
 
-        var latestTokenLogQuery = DatabaseQuery.Create(LatestRefreshTokenQuery, cancellationToken);
+        var latestTokenLogQuery = DatabaseQuery.Create(LatestRefreshTokenQuery, new LatestTokenLogSqlParams(authSuccessResult.Id), cancellationToken);
         var latestTokenLog = await _dbContext.ExecuteFindAsync<TokenLogEntity>(latestTokenLogQuery);
         var isLatestRefreshToken = latestTokenLog.RefreshToken == request.RefreshToken;
 
@@ -52,5 +51,7 @@ public class SelectAuthSuccessByRefreshTokenQueryHandler : IRequestHandler<Selec
                          new []{ new TokenLog(latestTokenLog.RefreshToken, latestTokenLog.AuthSuccessId, latestTokenLog.CreatedAt) }, !isLatestRefreshToken);
     }
     
-    private sealed record SqlParams(string RefreshToken);
+    private sealed record AuthSuccessSqlParams(string RefreshToken);
+
+    private sealed record LatestTokenLogSqlParams(ulong AuthSuccessId);
 }
