@@ -32,7 +32,7 @@ public class JwtIssuer : IJwtIssuer
         _apiOptions = Guard.Against.Null(apiOptions);
     }
 
-    public string Create(string walletAddress, string audience)
+    public string Create(string walletAddress, string? audience)
     {
         Guard.Against.NullOrEmpty(walletAddress, nameof(walletAddress));
 
@@ -42,7 +42,6 @@ public class JwtIssuer : IJwtIssuer
         {
             Subject = new ClaimsIdentity(),
             Issuer = _apiOptions.Value.Authority,
-            Audience = audience,
             Expires = DateTime.UtcNow + TokenLifetime,
             IssuedAt = DateTime.UtcNow,
             SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256)
@@ -50,6 +49,7 @@ public class JwtIssuer : IJwtIssuer
                 CryptoProviderFactory = new CryptoProviderFactory { CustomCryptoProvider = new KeyVaultCryptoProvider() }
             }
         };
+        if (audience is not null) tokenDescriptor.Audience = audience;
 
         tokenDescriptor.Subject.AddClaim(new Claim(JwtRegisteredClaimNames.Sub, walletAddress));
         tokenDescriptor.Subject.AddClaim(new Claim("wallet", walletAddress));

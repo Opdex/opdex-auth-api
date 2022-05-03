@@ -15,13 +15,13 @@ public class AuthSessionEntity
         Id = authSession.Stamp;
         Audience = authSession.Audience;
         CodeChallenge = authSession.CodeChallenge;
-        CodeChallengeMethod = authSession.CodeChallengeMethod;
+        CodeChallengeMethod = authSession.ChallengeMethod;
         ConnectionId = authSession.ConnectionId;
     }
 
     public Guid Id { get; set; }
-    public string Audience { get; set; }
-    public string CodeChallenge { get; set; }
-    public CodeChallengeMethod CodeChallengeMethod { get; set; }
+    public string? Audience { get; set; }
+    public string? CodeChallenge { get; set; }
+    public CodeChallengeMethod? CodeChallengeMethod { get; set; }
     public string? ConnectionId { get; set; }
 }

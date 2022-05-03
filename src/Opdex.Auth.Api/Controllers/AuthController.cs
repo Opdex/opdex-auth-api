@@ -44,18 +44,24 @@ public class AuthController : ControllerBase
     [HttpGet("authorize")]
     public async Task<IActionResult> Authorize([FromQuery] AuthorizeRequestQuery query, CancellationToken cancellationToken)
     {
+        AuthSession? session;
+        bool authSessionCreated;
+        
         switch (query.ResponseType)
         {
             case ResponseType.Code:
-                var session = new AuthSession(new Uri(query.RedirectUri!), query.CodeChallenge!, query.CodeChallengeMethod);
-                var authSessionCreated = await _mediator.Send(new PersistAuthSessionCommand(session), cancellationToken);
+                session = new AuthSession(new Uri(query.RedirectUri!), query.CodeChallenge!, query.CodeChallengeMethod);
+                authSessionCreated = await _mediator.Send(new PersistAuthSessionCommand(session), cancellationToken);
                 if (!authSessionCreated) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status500InternalServerError);
 
                 var authPromptUri = $"{_promptOptions.Value.Prompt}?redirect_uri={query.RedirectUri}&stamp={session.Stamp}";
                 if (query.State is not null) authPromptUri += $"&state={query.State}";
                 return Redirect(authPromptUri);
             case ResponseType.Sid:
-                return Ok(_stratisIdGenerator.Create("v1/auth/token", Guid.NewGuid().ToString()).ToUriString());
+                var sid = _stratisIdGenerator.Create("v1/auth/token", Guid.NewGuid().ToString());
+                session = new AuthSession(sid.Uid);
+                authSessionCreated = await _mediator.Send(new PersistAuthSessionCommand(session), cancellationToken);
+                return !authSessionCreated ? ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status500InternalServerError) : Ok(sid.ToUriString());
             default:
                 // should already have been validated by fluent validation
                 throw new ValidationException(new[]
@@ -70,6 +76,7 @@ public class AuthController : ControllerBase
     {
         var accessToken = "";
         AuthSuccess? authSuccess;
+        AuthSession? authSession;
         
         switch (body.GrantType)
         {
@@ -79,7 +86,7 @@ public class AuthController : ControllerBase
                 if (authCode is null || !authCode.Expired)
                     return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Invalid or expired authorization code");
 
-                var authSession = await _mediator.Send(new SelectAuthSessionByIdQuery(authCode.Stamp), cancellationToken);
+                authSession = await _mediator.Send(new SelectAuthSessionByIdQuery(authCode.Stamp), cancellationToken);
                 if (!authSession!.Verify(body.CodeVerifier!))
                     return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Unable to verify code challenge");
 
@@ -95,6 +102,12 @@ public class AuthController : ControllerBase
                 break;
             }
             case GrantType.Sid:
+                authSession = await _mediator.Send(new SelectAuthSessionByConnectionIdQuery(body.Sid!.Uid), cancellationToken);
+                if (authSession is null) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Unable to verify sid");
+
+                // delete session to prevent sid reuse
+                await _mediator.Send(new DeleteAuthSessionCommand(authSession), cancellationToken);
+                
                 var callbackUri = $"{_apiOptions.Value.Authority}{Request.Path}";
                 var result = await _stratisIdValidator.RetrieveConnectionId(callbackUri, body.Sid!.Uid, body.Sid!.Expiry, body.PublicKey!, body.Signature!, cancellationToken);
                 if (result.IsFailed) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, result.Errors[0].Message);

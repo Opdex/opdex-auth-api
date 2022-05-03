@@ -13,12 +13,14 @@ public class PersistAuthSessionCommandHandler : IRequestHandler<PersistAuthSessi
                 {nameof(AuthSessionEntity.Id)},
                 {nameof(AuthSessionEntity.Audience)},
                 {nameof(AuthSessionEntity.CodeChallenge)},
-                {nameof(AuthSessionEntity.CodeChallengeMethod)}
+                {nameof(AuthSessionEntity.CodeChallengeMethod)},
+                {nameof(AuthSessionEntity.ConnectionId)}
               ) VALUES (
                 @{nameof(AuthSessionEntity.Id)},
                 @{nameof(AuthSessionEntity.Audience)},
                 @{nameof(AuthSessionEntity.CodeChallenge)},
-                @{nameof(AuthSessionEntity.CodeChallengeMethod)}
+                @{nameof(AuthSessionEntity.CodeChallengeMethod)},
+                @{nameof(AuthSessionEntity.ConnectionId)}
               );".RemoveExcessWhitespace();
 
     private static readonly string UpdateSqlCommand =
