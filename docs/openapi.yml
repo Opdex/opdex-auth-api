@@ -302,6 +302,18 @@ paths:
                 errors:
                   code:
                     - Authorization code is not valid.
+        403:
+          description: Invalid refresh token
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/problemDetails"
+              example:
+                type: https://httpstatuses.com/403
+                title: Forbidden
+                detail: Invalid refresh token
+                status: 403
+                traceId: 00-00000000000000000000000000000000-0000000000000000-00
         429:
           $ref: "#/components/responses/TooManyRequests"
         500:

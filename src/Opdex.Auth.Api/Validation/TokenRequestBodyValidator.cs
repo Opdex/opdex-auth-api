@@ -12,7 +12,7 @@ public class TokenRequestBodyValidator : AbstractValidator<TokenRequestBody>
     public TokenRequestBodyValidator()
     {
         RuleFor(request => request.GrantType)
-            .MustBeValidEnumValue().WithMessage("Grant type must be authorization_code, ssas or refresh_token");
+            .MustBeValidEnumValue().WithMessage("Grant type must be authorization_code, sid or refresh_token");
         
         When(request => request.GrantType == GrantType.AuthorizationCode, () =>
         {
