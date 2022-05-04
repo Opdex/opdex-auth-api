@@ -1,4 +1,5 @@
 using System;
+using Opdex.Auth.Domain;
 using SSAS.NET;
 
 namespace Opdex.Auth.Api.Models;

@@ -2,6 +2,7 @@ using System;
 using System.Text.RegularExpressions;
 using FluentValidation;
 using Opdex.Auth.Api.Models;
+using Opdex.Auth.Domain;
 
 namespace Opdex.Auth.Api.Validation;
 

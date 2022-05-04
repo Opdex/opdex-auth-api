@@ -29,6 +29,8 @@ public class AuthSession
     public CodeChallengeMethod? ChallengeMethod { get; }
     public string? ConnectionId { get; private set; }
 
+    public ResponseType SessionType => CodeChallenge is not null ? ResponseType.Code : ResponseType.Sid;
+
     public void EstablishPrompt(string connectionId)
     {
         if (ConnectionId is not null && ConnectionId != connectionId) throw new InvalidOperationException("Connection already associated with session");

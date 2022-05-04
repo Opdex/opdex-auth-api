@@ -2,6 +2,7 @@ using System;
 using FluentValidation.TestHelper;
 using Opdex.Auth.Api.Models;
 using Opdex.Auth.Api.Validation;
+using Opdex.Auth.Domain;
 using SSAS.NET;
 using Xunit;
 

@@ -103,7 +103,7 @@ public class AuthController : ControllerBase
             }
             case GrantType.Sid:
                 authSession = await _mediator.Send(new SelectAuthSessionByConnectionIdQuery(body.Sid!.Uid), cancellationToken);
-                if (authSession is null) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Unable to verify sid");
+                if (authSession is null) return ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status400BadRequest, "Sid has been invalidated");
 
                 // delete session to prevent sid reuse
                 await _mediator.Send(new DeleteAuthSessionCommand(authSession), cancellationToken);

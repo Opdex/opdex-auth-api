@@ -1,4 +1,4 @@
-namespace Opdex.Auth.Api.Models;
+namespace Opdex.Auth.Domain;
 
 public enum ResponseType
 {
