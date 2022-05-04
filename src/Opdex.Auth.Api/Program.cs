@@ -84,6 +84,7 @@ try
 
     builder.Services.AddScoped<ITwoWayEncryptionProvider, AesCbcProvider>();
     builder.Services.AddScoped<IJwtIssuer, JwtIssuer>();
+    builder.Services.AddScoped<IStratisIdGenerator, StratisIdGenerator>();
     builder.Services.AddScoped<StratisIdValidator>();
     builder.Services.AddSignalR(o => { o.EnableDetailedErrors = true; }).AddAzureSignalR();
     builder.Services.AddApiVersioning(options =>
@@ -130,6 +131,7 @@ try
         {
             config.ValueProviderFactories.Add(new SnakeCaseValueProviderFactory());
             config.ModelBinderProviders.Insert(0, new SnakeCaseModelBinderProvider());
+            config.ModelBinderProviders.Insert(1, new StratisIdModelBinderProvider());
         })
         .AddJsonOptions(config => config.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
     builder.Services.AddProblemDetailsConventions();

@@ -61,7 +61,7 @@ public class FakeDeleteAuthCodeCommandHandler : DeleteAuthCodeCommandHandler
     {
     }
 
-    public Task Handle(DeleteAuthCodeCommand command, CancellationToken cancellationToken)
+    public new Task Handle(DeleteAuthCodeCommand command, CancellationToken cancellationToken)
     {
         return base.Handle(command, cancellationToken);
     }

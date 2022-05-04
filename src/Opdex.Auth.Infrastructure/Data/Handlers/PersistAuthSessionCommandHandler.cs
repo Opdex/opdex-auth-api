@@ -1,6 +1,7 @@
 using Ardalis.GuardClauses;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Opdex.Auth.Domain;
 using Opdex.Auth.Domain.Requests;
 using Opdex.Auth.Infrastructure.Data.Entities;
 
@@ -13,12 +14,14 @@ public class PersistAuthSessionCommandHandler : IRequestHandler<PersistAuthSessi
                 {nameof(AuthSessionEntity.Id)},
                 {nameof(AuthSessionEntity.Audience)},
                 {nameof(AuthSessionEntity.CodeChallenge)},
-                {nameof(AuthSessionEntity.CodeChallengeMethod)}
+                {nameof(AuthSessionEntity.CodeChallengeMethod)},
+                {nameof(AuthSessionEntity.ConnectionId)}
               ) VALUES (
                 @{nameof(AuthSessionEntity.Id)},
                 @{nameof(AuthSessionEntity.Audience)},
                 @{nameof(AuthSessionEntity.CodeChallenge)},
-                @{nameof(AuthSessionEntity.CodeChallengeMethod)}
+                @{nameof(AuthSessionEntity.CodeChallengeMethod)},
+                @{nameof(AuthSessionEntity.ConnectionId)}
               );".RemoveExcessWhitespace();
 
     private static readonly string UpdateSqlCommand =
@@ -42,7 +45,7 @@ public class PersistAuthSessionCommandHandler : IRequestHandler<PersistAuthSessi
         {
             var entity = new AuthSessionEntity(request.AuthSession);
 
-            var sql = entity.ConnectionId is null ? InsertSqlCommand : UpdateSqlCommand;
+            var sql = request.AuthSession.SessionType == ResponseType.Sid || entity.ConnectionId is null ? InsertSqlCommand : UpdateSqlCommand;
             
             var command = DatabaseQuery.Create(sql, entity, CancellationToken.None);
 

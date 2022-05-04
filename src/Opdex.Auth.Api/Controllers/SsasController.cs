@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
@@ -28,7 +29,7 @@ public class SsasController : ControllerBase
         _stratisIdValidator = Guard.Against.Null(stratisIdValidator);
         _apiOptions = Guard.Against.Null(apiOptions);
     }
-    
+
     [HttpPost]
     [Route("callback")]
     public async Task<IActionResult> StratisSignatureAuthCallback([FromQuery] StratisSignatureAuthCallbackQuery query,

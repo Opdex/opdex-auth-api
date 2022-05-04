@@ -13,7 +13,7 @@ public class AuthSuccessEntity
     {
         Guard.Against.Null(authSuccess, nameof(authSuccess));
         Id = authSuccess.Id;
-        Audience = authSuccess.Audience;
+        Audience = authSuccess.Audience ?? "";
         Address = authSuccess.Address;
         Expiry = authSuccess.Expiry;
     }

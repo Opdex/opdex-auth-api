@@ -14,14 +14,14 @@ namespace Opdex.Auth.Api.SignalR;
 public class AuthHub : Hub<IAuthClient>
 {
     private readonly IMediator _mediator;
+    private readonly IStratisIdGenerator _stratisIdGenerator;
     private readonly ITwoWayEncryptionProvider _twoWayEncryptionProvider;
-    private readonly IOptionsSnapshot<ApiOptions> _apiOptions;
 
-    public AuthHub(IMediator mediator, ITwoWayEncryptionProvider twoWayEncryptionProvider, IOptionsSnapshot<ApiOptions> apiOptions)
+    public AuthHub(IMediator mediator, IStratisIdGenerator stratisIdGenerator, ITwoWayEncryptionProvider twoWayEncryptionProvider)
     {
         _mediator = Guard.Against.Null(mediator, nameof(mediator));
+        _stratisIdGenerator = Guard.Against.Null(stratisIdGenerator, nameof(stratisIdGenerator));
         _twoWayEncryptionProvider = Guard.Against.Null(twoWayEncryptionProvider, nameof(twoWayEncryptionProvider));
-        _apiOptions = Guard.Against.Null(apiOptions, nameof(apiOptions));
     }
 
     /// <summary>
@@ -40,14 +40,7 @@ public class AuthHub : Hub<IAuthClient>
         var sessionLinked = await _mediator.Send(new PersistAuthSessionCommand(authSession));
         if (!sessionLinked) throw new AuthSessionConnectionException();
 
-        var expiry = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds();
-        return new StratisId($"{_apiOptions.Value.Authority}/v1/ssas/callback", CreateUid(), expiry).ToString();
-
-        string CreateUid()
-        {
-            var encryptedConnectionId = _twoWayEncryptionProvider.Encrypt($"{Context.ConnectionId}{expiry}");
-            return Base64Extensions.UrlSafeBase64Encode(encryptedConnectionId);
-        }
+        return _stratisIdGenerator.Create("v1/ssas/callback", Context.ConnectionId).ToString();
     }
 
     public async Task<bool> Reconnect(string previousConnectionId, string sid)

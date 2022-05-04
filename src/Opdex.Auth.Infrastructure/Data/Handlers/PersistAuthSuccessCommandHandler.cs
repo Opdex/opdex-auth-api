@@ -71,9 +71,9 @@ public class PersistAuthSuccessCommandHandler : IRequestHandler<PersistAuthSucce
         {
             var customProperties = new Dictionary<string, object>
             {
-                { nameof(request.AuthSuccess.Audience), request.AuthSuccess.Audience },
                 { nameof(request.AuthSuccess.Address), request.AuthSuccess.Address },
             };
+            if (request.AuthSuccess.Audience is not null) customProperties.Add(nameof(request.AuthSuccess.Audience), request.AuthSuccess.Audience);
             
             using (_logger.BeginScope(customProperties))
             {

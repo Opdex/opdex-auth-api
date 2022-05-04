@@ -27,6 +27,7 @@ public class AuthHubTests
     private readonly Mock<HubCallerContext> _hubCallerContextMock;
     private readonly Mock<IAuthClient> _callerClientMock;
     private readonly Mock<IMediator> _mediatorMock;
+    private readonly Mock<IStratisIdGenerator> _stratisIdGeneratorMock;
 
     private readonly AuthHub _hub;
 
@@ -39,10 +40,10 @@ public class AuthHubTests
         hubCallerClientsMock.Setup(callTo => callTo.Caller).Returns(_callerClientMock.Object);
 
         _mediatorMock = new Mock<IMediator>();
-        var apiOptionsMock = new Mock<IOptionsSnapshot<ApiOptions>>();
-        apiOptionsMock.Setup(callTo => callTo.Value).Returns(new ApiOptions { Authority = _baseUri.ToString().TrimEnd('/') });
 
-        _hub = new AuthHub(_mediatorMock.Object, _twoWayEncryptionProvider, apiOptionsMock.Object)
+        _stratisIdGeneratorMock = new Mock<IStratisIdGenerator>();
+
+        _hub = new AuthHub(_mediatorMock.Object, _stratisIdGeneratorMock.Object, _twoWayEncryptionProvider)
         {
             Context = _hubCallerContextMock.Object,
             Clients = hubCallerClientsMock.Object
@@ -63,112 +64,123 @@ public class AuthHubTests
     }
 
     [Fact]
-    public async Task GetStratisId_TwoWayEncryptionProvider_Encrypt()
+    public async Task GetStratisId_AuthSessionDoesntExist_ThrowAuthSessionConnectionException()
     {
         // Arrange
-        const string connectionId = "MY_C8NN3CTI8N_ID";
+        _mediatorMock
+            .Setup(callTo => callTo.Send(It.IsAny<SelectAuthSessionByIdQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AuthSession?) null);
+        
+        // Act
+        Func<Task<string>> Act() => () => _hub.GetStratisId(Guid.NewGuid().ToString());
+
+        // Assert
+        await Act().Should().ThrowExactlyAsync<AuthSessionConnectionException>();
+    }
+
+    [Fact]
+    public async Task GetStratisId_PersistAuthSession_LinkConnectionId()
+    {
+        // Arrange
+        const string connectionId = "8rn4UxxPl2m4jd8DDa9fir920";
         _hubCallerContextMock.Setup(callTo => callTo.ConnectionId).Returns(connectionId);
 
-        var authSession = new AuthSession(Guid.NewGuid(), "https://app.opdex.com", "challenge", CodeChallengeMethod.Plain);
         _mediatorMock
             .Setup(callTo => callTo.Send(It.IsAny<SelectAuthSessionByIdQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(authSession);
-        _mediatorMock
-            .Setup(callTo => callTo.Send(It.IsAny<PersistAuthSessionCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+            .ReturnsAsync(new AuthSession(new Uri("https://app.opdex.com"), "C0d3Ch4113ng3", CodeChallengeMethod.Plain));
 
+        _mediatorMock.Setup(callTo => callTo.Send(It.IsAny<PersistAuthSessionCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        
         // Act
-         await _hub.GetStratisId(Guid.NewGuid().ToString());
+        try
+        {
+            await _hub.GetStratisId(Guid.NewGuid().ToString());
+        }
+        catch (Exception)
+        {
+            // ignore
+        }
 
         // Assert
-        _twoWayEncryptionProvider.EncryptCalls.Count.Should().Be(1);
-        var decrypted = _twoWayEncryptionProvider.EncryptCalls.Dequeue();
-
-        var decryptedConnectionId = decrypted[..^10];
-        var decryptedExpiration = long.Parse(decrypted[^10..]);
-        decryptedConnectionId.Should().Be(connectionId);
-        decryptedExpiration.Should().BeGreaterThan(0);
+        _mediatorMock.Verify(callTo => callTo.Send(It.Is<PersistAuthSessionCommand>(
+            c => c.AuthSession.ConnectionId == connectionId), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task GetStratisId_StratisId_WellFormatted()
+    public async Task GetStratisId_CouldNotPersistAuthSession_ThrowAuthSessionConnectionException()
     {
         // Arrange
         _hubCallerContextMock.Setup(callTo => callTo.ConnectionId).Returns("8rn4UxxPl2m4jd8DDa9fir920");
 
-        var authSession = new AuthSession(Guid.NewGuid(), "https://app.opdex.com", "challenge", CodeChallengeMethod.Plain);
         _mediatorMock
             .Setup(callTo => callTo.Send(It.IsAny<SelectAuthSessionByIdQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(authSession);
-        _mediatorMock
-            .Setup(callTo => callTo.Send(It.IsAny<PersistAuthSessionCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+            .ReturnsAsync(new AuthSession(new Uri("https://app.opdex.com"), "C0d3Ch4113ng3", CodeChallengeMethod.Plain));
 
-        var expected = Encoding.UTF8.GetBytes("3NCRYPT3DCONNECTIONID");
-        _twoWayEncryptionProvider.WhenEncryptCalled(() => expected);
-
+        _mediatorMock.Setup(callTo => callTo.Send(It.IsAny<PersistAuthSessionCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        
         // Act
-        var encrypted = await _hub.GetStratisId(Guid.NewGuid().ToString());
+        Func<Task<string>> Act() => () => _hub.GetStratisId(Guid.NewGuid().ToString());
 
         // Assert
-        StratisId.TryParse(encrypted, out _).Should().Be(true);
+        await Act().Should().ThrowExactlyAsync<AuthSessionConnectionException>();
     }
 
     [Fact]
-    public async Task GetStratisId_Callback_FromConfig()
+    public async Task GetStratisId_CreateStratisId_CorrectParameters()
     {
         // Arrange
-        _hubCallerContextMock.Setup(callTo => callTo.ConnectionId).Returns("8rn4UxxPl2m4jd8DDa9fir920");
+        const string connectionId = "8rn4UxxPl2m4jd8DDa9fir920";
+        _hubCallerContextMock.Setup(callTo => callTo.ConnectionId).Returns(connectionId);
 
-        var authSession = new AuthSession(Guid.NewGuid(), "https://app.opdex.com", "challenge", CodeChallengeMethod.Plain);
         _mediatorMock
             .Setup(callTo => callTo.Send(It.IsAny<SelectAuthSessionByIdQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(authSession);
-        _mediatorMock
-            .Setup(callTo => callTo.Send(It.IsAny<PersistAuthSessionCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AuthSession(new Uri("https://app.opdex.com"), "C0d3Ch4113ng3", CodeChallengeMethod.Plain));
+
+        _mediatorMock.Setup(callTo => callTo.Send(It.IsAny<PersistAuthSessionCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-
-        var expected = Encoding.UTF8.GetBytes("3NCRYPT3DCONNECTIONID");
-        _twoWayEncryptionProvider.WhenEncryptCalled(() => expected);
-
+        
         // Act
-        var encrypted = await _hub.GetStratisId(Guid.NewGuid().ToString());
+        try
+        {
+            await _hub.GetStratisId(Guid.NewGuid().ToString());
+        }
+        catch (Exception)
+        {
+            // ignore
+        }
 
         // Assert
-        _ = StratisId.TryParse(encrypted, out var stratisId);
-        stratisId.Callback.Should().StartWith($"{_baseUri.Host}/v1/ssas/callback");
+        _stratisIdGeneratorMock.Verify(callTo => callTo.Create("v1/ssas/callback", connectionId), Times.Once);
     }
 
     [Fact]
-    public async Task GetStratisId_Uid_ConnectionIdUrlSafeBase64Encoded()
+    public async Task GetStratisId_Return_StringifiedStratisId()
     {
         // Arrange
+        var stubStratisId = new StratisId("app.opdex.com", "f8a9j20jdasiw", 4029420153);
         _hubCallerContextMock.Setup(callTo => callTo.ConnectionId).Returns("8rn4UxxPl2m4jd8DDa9fir920");
-
-        var authSession = new AuthSession(Guid.NewGuid(), "https://app.opdex.com", "challenge", CodeChallengeMethod.Plain);
         _mediatorMock
             .Setup(callTo => callTo.Send(It.IsAny<SelectAuthSessionByIdQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(authSession);
-        _mediatorMock
-            .Setup(callTo => callTo.Send(It.IsAny<PersistAuthSessionCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AuthSession(new Uri("https://app.opdex.com"), "C0d3Ch4113ng3", CodeChallengeMethod.Plain));
+        _mediatorMock.Setup(callTo => callTo.Send(It.IsAny<PersistAuthSessionCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-
-        var expected = Encoding.UTF8.GetBytes("3NCRYPT3DCONNECTIONID");
-        _twoWayEncryptionProvider.WhenEncryptCalled(() => expected);
-
+        _stratisIdGeneratorMock.Setup(callTo => callTo.Create(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(stubStratisId);
+        
         // Act
-        var encrypted = await _hub.GetStratisId(Guid.NewGuid().ToString());
+        var response = await _hub.GetStratisId(Guid.NewGuid().ToString());
 
         // Assert
-        _ = StratisId.TryParse(encrypted, out var stratisId);
-        stratisId.Uid.Should().Be(Base64Extensions.UrlSafeBase64Encode(expected));
+        response.Should().Be(stubStratisId.ToString());
     }
 
     [Fact]
     public async Task Reconnect_InvalidStratisId_DoNotAuthenticate()
     {
         // Arrange
-        var previousConnectionId = "QU5FWENSWVBURURDT05ORUNUSU9OSUQ";
+        const string previousConnectionId = "QU5FWENSWVBURURDT05ORUNUSU9OSUQ";
         var stratisId = "INVALID STRATIS ID";
 
         // Act
