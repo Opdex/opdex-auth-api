@@ -47,7 +47,7 @@ public class SelectAuthSuccessByRefreshTokenQueryHandler : IRequestHandler<Selec
         var latestTokenLog = await _dbContext.ExecuteFindAsync<TokenLogEntity>(latestTokenLogQuery);
         var isLatestRefreshToken = latestTokenLog.RefreshToken == request.RefreshToken;
 
-        return new AuthSuccess(authSuccessResult.Id, authSuccessResult.Audience, authSuccessResult.Address, authSuccessResult.Expiry,
+        return new AuthSuccess(authSuccessResult.Id, authSuccessResult.Address, authSuccessResult.Audience, authSuccessResult.Expiry,
                          new []{ new TokenLog(latestTokenLog.RefreshToken, latestTokenLog.AuthSuccessId, latestTokenLog.CreatedAt) }, !isLatestRefreshToken);
     }
     
