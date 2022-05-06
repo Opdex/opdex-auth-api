@@ -1,4 +1,5 @@
 using System;
+using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
@@ -61,7 +62,9 @@ public class AuthController : ControllerBase
                 var sid = _stratisIdGenerator.Create("v1/auth/token", Guid.NewGuid().ToString());
                 session = new AuthSession(sid.Uid);
                 authSessionCreated = await _mediator.Send(new PersistAuthSessionCommand(session), cancellationToken);
-                return !authSessionCreated ? ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status500InternalServerError) : Ok(sid.ToUriString());
+                return !authSessionCreated
+                    ? ProblemDetailsBuilder.BuildResponse(HttpContext, StatusCodes.Status500InternalServerError)
+                    : Content(sid.ToUriString(), MediaTypeNames.Text.Plain);
             default:
                 // should already have been validated by fluent validation
                 throw new ValidationException(new[]
