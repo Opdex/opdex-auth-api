@@ -156,7 +156,7 @@ public class AuthHubTests
     }
 
     [Fact]
-    public async Task GetStratisId_Return_StringifiedStratisId()
+    public async Task GetStratisId_Return_StringifiedStratisIdUri()
     {
         // Arrange
         var stubStratisId = new StratisId("app.opdex.com", "f8a9j20jdasiw", 4029420153);
@@ -173,7 +173,7 @@ public class AuthHubTests
         var response = await _hub.GetStratisId(Guid.NewGuid().ToString());
 
         // Assert
-        response.Should().Be(stubStratisId.ToString());
+        response.Should().Be(stubStratisId.ToUriString());
     }
 
     [Fact]

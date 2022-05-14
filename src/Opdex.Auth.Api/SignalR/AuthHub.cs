@@ -40,7 +40,7 @@ public class AuthHub : Hub<IAuthClient>
         var sessionLinked = await _mediator.Send(new PersistAuthSessionCommand(authSession));
         if (!sessionLinked) throw new AuthSessionConnectionException();
 
-        return _stratisIdGenerator.Create("v1/ssas/callback", Context.ConnectionId).ToString();
+        return _stratisIdGenerator.Create("v1/ssas/callback", Context.ConnectionId).ToUriString();
     }
 
     public async Task<bool> Reconnect(string previousConnectionId, string sid)
