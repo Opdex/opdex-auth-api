@@ -84,6 +84,7 @@ public class Base64ExtensionsTests
         // Assert
         plainText.ToArray().Should().BeEquivalentTo(Encoding.UTF8.GetBytes("1234567890"));
     }
+    
     [Fact]
     public void TryUrlSafeBase64Decode_EmptyString_ReturnFalse()
     {

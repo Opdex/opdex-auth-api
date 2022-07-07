@@ -20,7 +20,6 @@ public interface INetworkAddressValidator : IPropertyValidator
 {
 }
 
-
 public static class NetworkAddressValidatorExtensions
 {
     /// <summary>
